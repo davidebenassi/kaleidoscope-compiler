@@ -12,7 +12,7 @@ parser.o: parser.cpp
 	clang++-17 -c parser.cpp -I /usr/lib/llvm-17/include -std=c++17 -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 	
 scanner.o: scanner.cpp parser.hpp
-	clang++-17 -c scanner.cpp -I /usr/lib/llvm-17include -std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS 
+	clang++-17 -c scanner.cpp -I /usr/lib/llvm-17/include -std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS 
 	
 driver.o: driver.cpp parser.hpp driver.hpp
 	clang++-17 -c driver.cpp -I /usr/lib/llvm-17/include -std=c++17 -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS 
