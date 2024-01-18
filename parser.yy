@@ -22,6 +22,7 @@
   class BlockExprAST;
   class VarBindingAST;
   class AssignmentExprAST;
+  class GlobalValueAST;
 }
 
 // The parsing context.
@@ -80,6 +81,7 @@
 %type <ExprAST*> stmt;
 %type <AssignmentExprAST*> assignment;
 %type <ExprAST*>initexp;
+%type <GlobalValueAST*> globalvar;
 
 %%
 %start startsymb;
@@ -89,12 +91,13 @@ program                 { drv.root = $1; };
 
 program:
   %empty                { $$ = new SeqAST(nullptr,nullptr); }
-|  top ";" program      { $$ = new SeqAST($1,$3); };
+|  top ";" program      { $$ = new SeqAST($1,$3); };               //! le altre dasmkmdk: non dovrebbero finire in program
 
 top:
 %empty                  { $$ = nullptr; }
 | definition            { $$ = $1; }
-| external              { $$ = $1; };
+| external              { $$ = $1; }
+| globalvar             { $$ = $1; };
 
 definition:
   "def" proto exp       { $$ = new FunctionAST($2,$3); $2->noemit(); };
@@ -105,6 +108,8 @@ external:
 proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
   
+globalvar :
+ "global " "id"         { $$ = new GlobalValueAST($2) };
 
 idseq:
   %empty                { std::vector<std::string> args;
@@ -124,10 +129,9 @@ stmts:
 | stmt ";" stmts        {$3.insert($3.begin(), $1); $$ = $3; };
 
 stmt:
-  assignment                 { $$ = $1; }          //! VarBindingAST -> ExprAST
+  assignment                 { $$ = $1; }          
 | block                      { $$ = $1; }
 | exp                        { $$ = $1; };
-
 assignment:
  "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); };
 
