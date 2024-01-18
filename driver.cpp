@@ -342,7 +342,7 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    Value *BoundVal = Val->codegen(drv);
    if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
       return nullptr;
-   // Se tutto ok, si genera l'struzione che alloca memoria per la varibile ...
+   // Se tutto ok, si genera l'struzione che alloca memoria per la variabile ...
    AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
    // ... e si genera l'istruzione per memorizzarvi il valore dell'espressione,
    // ovvero il contenuto del registro BoundVal
@@ -493,4 +493,15 @@ Value* AssignmentExprAST::codegen(driver& drv) {
   return Alloca;
 }
 
+/********************** Global Value Tree *********************/
+GlobalValueAST::GlobalValueAST(std::string Name):  Name(Name){};
 
+AllocaInst* GlobalValueAST::codegen(driver& drv) {
+  
+  Function *fun = builder->GetInsertBlock()->getParent();
+  AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
+  builder->CreateStore(nullptr, Alloca);
+
+  return Alloca;
+
+}

@@ -58,6 +58,7 @@
   EXTERN     "extern"
   DEF        "def"
   VAR        "var"
+  GLOBAL     "global"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -109,7 +110,7 @@ proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
   
 globalvar :
- "global " "id"         { $$ = new GlobalValueAST($2) };
+ "global" "id"         { $$ = new GlobalValueAST($2); };
 
 idseq:
   %empty                { std::vector<std::string> args;
