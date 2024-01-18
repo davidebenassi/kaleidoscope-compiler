@@ -26,5 +26,5 @@ scanner.cpp: scanner.ll
 clean:
 	rm -f *~ driver.o scanner.o parser.o kcomp.o scanner.cpp parser.cpp parser.hpp
 
-clean all:
+cleanall:
 	rm -f *~ driver.o scanner.o parser.o kcomp.o kcomp scanner.cpp parser.cpp parser.hpp

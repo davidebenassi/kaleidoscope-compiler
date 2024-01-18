@@ -307,8 +307,9 @@ Value* BlockExprAST::codegen(driver& drv) {
    // Ora (ed è la parte più "facile" da capire) viene generato il codice che
    // valuta l'espressione. Eventuali riferimenti a variabili vengono risolti
    // nella symbol table appena modificata
+    Value *blockvalue;
     for (int i=0, e=Val.size(); i<e; i++) {
-      Value *blockvalue = Val[i]->codegen(drv);
+      blockvalue = Val[i]->codegen(drv);
       if (!blockvalue) 
         return nullptr;
    }
@@ -482,9 +483,14 @@ AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  Name(Name
 
 Value* AssignmentExprAST::codegen(driver& drv) {
   Value *BoundVal = Val->codegen(drv);
+
   if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
     return nullptr;
-  
+
+  AllocaInst* Alloca = drv.NamedValues[Name];
+  builder->CreateStore(BoundVal, Alloca);
+
+  return Alloca;
 }
 
 

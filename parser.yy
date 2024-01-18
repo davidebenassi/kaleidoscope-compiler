@@ -21,6 +21,7 @@
   class PrototypeAST;
   class BlockExprAST;
   class VarBindingAST;
+  class AssignmentExprAST;
 }
 
 // The parsing context.
@@ -72,12 +73,12 @@
 %type <PrototypeAST*> external
 %type <PrototypeAST*> proto
 %type <std::vector<std::string>> idseq
-%type <std::<vector>ExprAST*> block
+%type <BlockExprAST*> block
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
 %type <std::vector<ExprAST*>> stmts;
 %type <ExprAST*> stmt;
-%type <VarBindingAST*> assignment;
+%type <AssignmentExprAST*> assignment;
 %type <ExprAST*>initexp;
 
 %%
@@ -128,11 +129,12 @@ stmt:
 | exp                        { $$ = $1; };
 
 assignment:
- "id" "=" exp                { $$ = new AssignmentExprAST($1,$3) };
+ "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); };
 
 block:
-  "{" stmts "}"               { $$ = $2; }
-| "{" vardefs ";" stmts"}"    { $$ = new BlockExprAST($2,$4); };   
+  "{" stmts "}"               { std::vector<VarBindingAST*> definitions;
+                                $$ = new BlockExprAST(definitions, $2); }
+| "{" vardefs ";" stmts"}"    { $$ = new BlockExprAST($2, $4); };   
 
 exp:
   exp "+" exp           { $$ = new BinaryExprAST('+',$1,$3); }

@@ -140,7 +140,7 @@ private:
   std::vector<VarBindingAST*> Def;
   std::vector<ExprAST*> Val;
 public:
-  BlockExprAST(std::vector<VarBindingAST*> Def, ExprAST* Val);
+  BlockExprAST(std::vector<VarBindingAST*> Def, std::vector<ExprAST*> Val);
   Value *codegen(driver& drv) override;
 }; 
 
@@ -193,7 +193,7 @@ private:
 
 public:
   AssignmentExprAST(std::string Name, ExprAST* Val);
-  lexval getLexVal() const override;
+  //lexval getLexVal() const override;
   Value *codegen(driver& drv) override;
 };
 
