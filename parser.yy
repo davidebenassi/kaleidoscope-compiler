@@ -72,16 +72,19 @@
 %type <PrototypeAST*> external
 %type <PrototypeAST*> proto
 %type <std::vector<std::string>> idseq
-%type <BlockExprAST*> blockexp
+%type <std::<vector>ExprAST*> block
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
-
+%type <std::vector<ExprAST*>> stmts;
+%type <ExprAST*> stmt;
+%type <VarBindingAST*> assignment;
+%type <ExprAST*>initexp;
 
 %%
 %start startsymb;
 
 startsymb:
-program                 { drv.root = $1; }
+program                 { drv.root = $1; };
 
 program:
   %empty                { $$ = new SeqAST(nullptr,nullptr); }
@@ -100,6 +103,7 @@ external:
 
 proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
+  
 
 idseq:
   %empty                { std::vector<std::string> args;
@@ -111,6 +115,25 @@ idseq:
 %left "+" "-";
 %left "*" "/";
 
+stmts:
+  stmt                  { std::vector<ExprAST*> args;
+                          args.push_back($1);
+                          $$ = args;
+                        }
+| stmt ";" stmts        {$3.insert($3.begin(), $1); $$ = $3; };
+
+stmt:
+  assignment                 { $$ = $1; }          //! VarBindingAST -> ExprAST
+| block                      { $$ = $1; }
+| exp                        { $$ = $1; };
+
+assignment:
+ "id" "=" exp                { $$ = new AssignmentExprAST($1,$3) };
+
+block:
+  "{" stmts "}"               { $$ = $2; }
+| "{" vardefs ";" stmts"}"    { $$ = new BlockExprAST($2,$4); };   
+
 exp:
   exp "+" exp           { $$ = new BinaryExprAST('+',$1,$3); }
 | exp "-" exp           { $$ = new BinaryExprAST('-',$1,$3); }
@@ -120,27 +143,28 @@ exp:
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; }
-| blockexp              { $$ = $1; };
-
-blockexp:
-  "{" vardefs ";" exp "}" { $$ = new BlockExprAST($2,$4); }
+| block                 { $$ = $1; };
   
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;
                             definitions.push_back($1);
                             $$ = definitions; }
 | vardefs ";" binding     { $1.push_back($3);
-                            $$ = $1; }
+                            $$ = $1; };
                             
 binding:
-  "var" "id" "=" exp      { $$ = new VarBindingAST($2,$4); }
-                      
+  "var" "id" initexp      { $$ = new VarBindingAST($2,$3); };
+
+initexp: 
+  %empty                  { $$ = nullptr; }
+| "=" exp                 { $$ = $2; };
+
 expif:
-  condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); }
+  condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); };
 
 condexp:
   exp "<" exp           { $$ = new BinaryExprAST('<',$1,$3); }
-| exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); }
+| exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); };
 
 idexp:
   "id"                  { $$ = new VariableExprAST($1); }
@@ -148,13 +172,13 @@ idexp:
 
 optexp:
   %empty                { std::vector<ExprAST*> args;
-			 $$ = args; }
+			                    $$ = args; }
 | explist               { $$ = $1; };
 
 explist:
   exp                   { std::vector<ExprAST*> args;
-                         args.push_back($1);
-			 $$ = args;
+                          args.push_back($1);
+			                    $$ = args;
                         }
 | exp "," explist       { $3.insert($3.begin(), $1); $$ = $3; };
  
