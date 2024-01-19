@@ -104,8 +104,15 @@ lexval VariableExprAST::getLexVal() const {
 // il nome del registro in cui verrà trasferito il valore dalla memoria
 Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
-  if (!A)
-     return LogErrorV("Variabile "+Name+" non definita");
+  if (!A){
+     GlobalVariable* A = module->getNamedGlobal(Name);
+
+     if (!A)
+      return LogErrorV("Variabile "+Name+" non definita");
+
+     return builder->CreateLoad(A->getValueType(), A, Name.c_str());
+  }
+  
   return builder->CreateLoad(A->getAllocatedType(), A, Name.c_str());
 }
 
@@ -265,8 +272,8 @@ Value* IfExprAST::codegen(driver& drv) {
 };
 
 /********************** Block Expression Tree *********************/
-BlockExprAST::BlockExprAST(std::vector<VarBindingAST*> Def, ExprAST* Val): 
-         Def(std::move(Def)), Val(Val) {};
+BlockExprAST::BlockExprAST(std::vector<VarBindingAST*> Def, std::vector<ExprAST*> Val): 
+         Def(std::move(Def)), Val(std::move(Val)) {};
 
 Value* BlockExprAST::codegen(driver& drv) {
    // Un blocco è un'espressione preceduta dalla definizione di una o più variabili locali.
@@ -291,7 +298,7 @@ Value* BlockExprAST::codegen(driver& drv) {
    //    table (nel caso y sia un parametro) bisognerebbe "rimuoverla" temporaneamente e re-inserirla
    //    all'uscita del blocco. Questo è ciò che viene fatto dal presente codice, che utilizza
    //    al riguardo il vettore di appoggio "AllocaTmp" (che naturalmente è un vettore di
-   //    di (puntatori ad) istruzioni di allocazione
+   //    di (puntatori ad) istruzioni di allocazione 
    std::vector<AllocaInst*> AllocaTmp;
    for (int i=0, e=Def.size(); i<e; i++) {
       // Per ogni definizione di variabile si genera il corrispondente codice che
@@ -307,9 +314,12 @@ Value* BlockExprAST::codegen(driver& drv) {
    // Ora (ed è la parte più "facile" da capire) viene generato il codice che
    // valuta l'espressione. Eventuali riferimenti a variabili vengono risolti
    // nella symbol table appena modificata
-   Value *blockvalue = Val->codegen(drv);
-      if (!blockvalue)
-         return nullptr;
+    Value *blockvalue;
+    for (int i=0, e=Val.size(); i<e; i++) {
+      blockvalue = Val[i]->codegen(drv);
+      if (!blockvalue) 
+        return nullptr;
+   }
    // Prima di uscire dal blocco, si ripristina lo scope esterno al costrutto
    for (int i=0, e=Def.size(); i<e; i++) {
         drv.NamedValues[Def[i]->getName()] = AllocaTmp[i];
@@ -339,7 +349,7 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    Value *BoundVal = Val->codegen(drv);
    if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
       return nullptr;
-   // Se tutto ok, si genera l'struzione che alloca memoria per la varibile ...
+   // Se tutto ok, si genera l'struzione che alloca memoria per la variabile ...
    AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
    // ... e si genera l'istruzione per memorizzarvi il valore dell'espressione,
    // ovvero il contenuto del registro BoundVal
@@ -474,3 +484,48 @@ Function *FunctionAST::codegen(driver& drv) {
   return nullptr;
 };
 
+
+/********************** Assignment Expression Tree *********************/
+AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  Name(Name), Val(Val) {};
+
+Value* AssignmentExprAST::codegen(driver& drv) {
+  
+  Value *BoundVal = Val->codegen(drv);
+
+  if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
+    return nullptr;
+  
+  AllocaInst* Alloca = drv.NamedValues[Name];
+  if(!Alloca){
+    GlobalVariable* A = module->getNamedGlobal(Name);
+    
+    if (!A)
+      return LogErrorV("Variabile "+Name+" non definita");
+
+    builder->CreateStore(BoundVal, A);
+    return A;
+  }
+
+  builder->CreateStore(BoundVal, Alloca);
+  return Alloca;
+}
+
+/********************** Global Value Tree *********************/
+GlobalValueAST::GlobalValueAST(std::string Name):  Name(Name){};
+
+Value* GlobalValueAST::codegen(driver& drv) {
+
+
+  GlobalVariable *var = new GlobalVariable(
+                                          *module, 
+                                          Type::getDoubleTy(*context),
+                                          false, 
+                                          GlobalValue::CommonLinkage, 
+                                          ConstantFP::get(*context, APFloat(0.0)), 
+                                          Name
+                                        );
+  var->print(errs());
+  fprintf(stderr, "\n");
+  return var;
+
+}
