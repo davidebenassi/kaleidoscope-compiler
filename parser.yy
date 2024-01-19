@@ -24,6 +24,7 @@
   class AssignmentExprAST;
   class GlobalValueAST;
   class ForExprAST;
+  class UnaryExprAST;
 }
 
 // The parsing context.
@@ -160,7 +161,10 @@ exp:
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; }
 | block                 { $$ = $1; }
-//| "+" "+" "id"          {}
+| "+" "+" exp           { $$ = new UnaryExprAST('+', $3); }
+| "-" "-" exp           { $$ = new UnaryExprAST('-', $3); }
+| exp "+" "+"           { $$ = new UnaryExprAST('+', $1); }
+| exp "-" "-"           { $$ = new UnaryExprAST('-', $1); };
 
 //ifstmt :
 //  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }

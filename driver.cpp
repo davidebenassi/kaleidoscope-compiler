@@ -529,6 +529,30 @@ Value* GlobalValueAST::codegen(driver& drv) {
   return var;
 }
 
+/******************** Unary Expression Tree **********************/
+UnaryExprAST::UnaryExprAST(char Op, ExprAST* Var):
+  Op(Op), Var(Var) {};
+
+// La generazione del codice in questo caso è di facile comprensione.
+// Vengono ricorsivamente generati il codice per il primo e quello per il secondo
+// operando. Con i valori memorizzati in altrettanti registri SSA si
+// costruisce l'istruzione utilizzando l'opportuno operatore
+Value *UnaryExprAST::codegen(driver& drv) {
+  Value *V = Var->codegen(drv);
+  if (!V) 
+     return nullptr;
+
+  switch (Op) {
+  case '+':
+    return builder->CreateFAdd(V,1,"addres");
+  case '-':
+    return builder->CreateFSub(V,1,"subres");
+  default:  
+    std::cout << Op << std::endl;
+    return LogErrorV("Operatore binario non supportato");
+  }
+};
+
 /********************** For Expression Tree *********************/
 ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};

@@ -218,5 +218,15 @@ public:
   Value *codegen(driver& drv) override;
 };
 
+class UnaryExprAST : public ExprAST {
+private:
+  char Op;
+  ExprAST* Var;
+
+public:
+  UnaryExprAST(char Op, ExprAST* Var);
+  Value *codegen(driver& drv) override;
+}
+
 
 #endif // ! DRIVER_HH
