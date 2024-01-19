@@ -81,14 +81,14 @@
 %type <BlockExprAST*> block
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
-%type <std::vector<ExprAST*>> stmts;
-%type <ExprAST*> stmt;
-%type <ExprAST*> assignment;
-%type <ExprAST*>initexp;
-%type <GlobalValueAST*> globalvar;
-//%type <ExprAST*> ifstmt;
-%type <ForExprAST*> forstmt;
-%type <RootAST*> init;
+%type <std::vector<ExprAST*>> stmts
+%type <ExprAST*> stmt
+%type <ExprAST*> assignment
+%type <ExprAST*>initexp
+%type <GlobalValueAST*> globalvar
+//%type <ExprAST*> ifstmt
+%type <ForExprAST*> forstmt
+%type <VarBindingAST*> init
 
 %%
 %start startsymb;
@@ -107,7 +107,7 @@ top:
 | globalvar             { $$ = $1; };
 
 definition:
-  "def" proto exp       { $$ = new FunctionAST($2,$3); $2->noemit(); };
+  "def" proto block       { $$ = new FunctionAST($2,$3); $2->noemit(); };
 
 external:
   "extern" proto        { $$ = $2; };
@@ -145,10 +145,8 @@ stmt:
 
 assignment:
  "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); }
-| "+" "+" exp                { $$ = new UnaryExprAST('+', $3); }
-| "-" "-" exp                { $$ = new UnaryExprAST('-', $3); }
-| exp "+" "+"                { $$ = new UnaryExprAST('+', $1); }
-| exp "-" "-"                { $$ = new UnaryExprAST('-', $1); };
+| "+" "+" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('+', new VariableExprAST($3), new NumberExprAST(1.0))); }
+| "-" "-" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('-', new VariableExprAST($3), new NumberExprAST(1.0))); };
 
 block:
   "{" stmts "}"               { std::vector<VarBindingAST*> definitions;
@@ -163,8 +161,7 @@ exp:
 | idexp                 { $$ = $1; }
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
-| expif                 { $$ = $1; }
-| block                 { $$ = $1; };
+| expif                 { $$ = $1; };
 
 //ifstmt :
 //  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
@@ -174,8 +171,8 @@ forstmt :
   "for" "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
 
 init :
-  binding             { $$ = $1; }
-| assignment          { $$ = $1; }; 
+  binding             { $$ = $1; };
+//| assignment          { $$ = $1; }; 
 
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;

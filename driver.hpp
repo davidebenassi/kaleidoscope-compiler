@@ -209,24 +209,24 @@ public:
 /// ForExprAST - Classe per l'implementazione del costrutto for
 class ForExprAST : public ExprAST {
 private:
-  RootAST* Init;
+  VarBindingAST* Init;
   ExprAST* CondExp;
   ExprAST* Assignment;
   ExprAST* Stmt;
 public:
-  ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt);
+  ForExprAST(VarBindingAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt);
   Value *codegen(driver& drv) override;
 };
 
-class UnaryExprAST : public ExprAST {
+/* class UnaryExprAST : public ExprAST {
 private:
   char Op;
-  ExprAST* Var;
+  std::string Name;
 
 public:
-  UnaryExprAST(char Op, ExprAST* Var);
+  UnaryExprAST(char Op, std::string Name);
   Value *codegen(driver& drv) override;
-};
+}; */
 
 
 #endif // ! DRIVER_HH

@@ -125,6 +125,7 @@ BinaryExprAST::BinaryExprAST(char Op, ExprAST* LHS, ExprAST* RHS):
 // operando. Con i valori memorizzati in altrettanti registri SSA si
 // costruisce l'istruzione utilizzando l'opportuno operatore
 Value *BinaryExprAST::codegen(driver& drv) {
+  
   Value *L = LHS->codegen(drv);
   Value *R = RHS->codegen(drv);
   if (!L || !R) 
@@ -359,7 +360,7 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    
    // L'istruzione di allocazione (che include il registro "puntatore" all'area di memoria
    // allocata) viene restituita per essere inserita nella symbol table
-   errs()<<Alloca;
+ 
    return Alloca;
 };
 
@@ -533,108 +534,103 @@ Value* GlobalValueAST::codegen(driver& drv) {
 }
 
 /******************** Unary Expression Tree **********************/
-UnaryExprAST::UnaryExprAST(char Op, ExprAST* Var):
-  Op(Op), Var(Var) {};
+/*UnaryExprAST::UnaryExprAST(char Op, std::string Name):
+  Op(Op), Name(Name) {};
 
 // La generazione del codice in questo caso è di facile comprensione.
 // Vengono ricorsivamente generati il codice per il primo e quello per il secondo
 // operando. Con i valori memorizzati in altrettanti registri SSA si
 // costruisce l'istruzione utilizzando l'opportuno operatore
-Value *UnaryExprAST::codegen(driver& drv) {
-  Value *V = Var->codegen(drv);
-  if (!V) 
-     return nullptr;
+Value UnaryExprAST::codegen(driver& drv) {
+
+  AllocaInst Alloca = drv.NamedValues[Name];
+
+  Value* oldVal;
+
+  if(!Alloca){
+    GlobalVariable* Alloca = module->getNamedGlobal(Name);
+    if (!Alloca)
+      return LogErrorV("Variabile "+Name+" non definita");
+    oldVal = builder->CreateLoad(Alloca->getValueType(), Alloca, Name.c_str());
+  }
+  else
+    oldVal = builder->CreateLoad(Alloca->getAllocatedType(), Alloca, Name.c_str());
+
+  if (!oldVal) 
+    return nullptr;
+
+  Value* newVal;
+
   switch (Op) {
   case '+':
-    return builder->CreateFAdd(V,ConstantFP::get(*context, APFloat(1.0)),"addres");
+    newVal = builder->CreateFAdd(oldVal,ConstantFP::get(context, APFloat(1.0)),"addres");
   case '-':
-    return builder->CreateFSub(V,ConstantFP::get(*context, APFloat(1.0)),"subres");
-  default:  
+    newVal = builder->CreateFSub(oldVal,ConstantFP::get(context, APFloat(1.0)),"subres");
+  default:
     std::cout << Op << std::endl;
     return LogErrorV("Operatore binario non supportato");
   }
-};
+
+  builder->CreateStore(newVal, Alloca);
+  return Alloca;
+}; */
 
 /********************** For Expression Tree *********************/
-ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
+ForExprAST::ForExprAST(VarBindingAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
-    Value* InitV = Init->codegen(drv);
-    
+
+    AllocaInst* InitV = Init->codegen(drv);
+
     if (!InitV)
        return nullptr;
-    
-    //drv.NamedValues[InitV->getName()] = InitV;
+      
+    AllocaInst* AllocaTmp = drv.NamedValues[Init->getName()];
+    drv.NamedValues[Init->getName()] = InitV;
 
-    Value* CondV = CondExp->codegen(drv);
-    if (!CondV)
-       return nullptr;
-    
-    // Ora bisogna generare l'istruzione di salto condizionato, ma prima
-    // vanno creati i corrispondenti basic block nella funzione attuale
-    // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
-    Function *function = builder->GetInsertBlock()->getParent();
 
-    BasicBlock *CondBB =  BasicBlock::Create(*context, "condexp", function);
-    // Il blocco TrueBB viene inserito nella funzione dopo il blocco corrente
-    //BasicBlock *AssignBB = BasicBlock::Create(*context, "assign");
-    BasicBlock *StmtBB = BasicBlock::Create(*context, "stmt");
-    BasicBlock *EndBB = BasicBlock::Create(*context, "end");
-    // Gli altri due blocchi non vengono ancora inseriti perché le istruzioni
-    // previste nel "ramo" true del condizionale potrebbe dare luogo alla creazione
-    // di altri blocchi, che naturalmente andrebbero inseriti prima di FalseBB
     
-    // Ora possiamo creare l'istruzione di salto condizionato
-    builder->CreateCondBr(CondV, StmtBB, EndBB);
-    
-    // "Posizioniamo" il builder all'inizio del blocco true, 
-    // generiamo ricorsivamente il codice da eseguire in caso di
-    // condizione vera e, in chiusura di blocco, generiamo il salto 
-    // incondizionato al blocco merge
-    builder->SetInsertPoint(StmtBB);
-    Value *StmtV = Stmt->codegen(drv);
-    if (!StmtV)
-       return nullptr;
-
     //Esecuzione assegnamento (incremento)
     Value *AssignedV = Assignment->codegen(drv);
     if (!AssignedV)
         return nullptr;
 
+    // Ora bisogna generare l'istruzione di salto condizionato, ma prima
+    // vanno creati i corrispondenti basic block nella funzione attuale
+    // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
+    Function *function = builder->GetInsertBlock()->getParent();
+    
+
+    BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function);
+    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop");
+    BasicBlock *EndBB = BasicBlock::Create(*context, "end");
+    
+    //BLOCCO CONDIZIONE
+    builder->SetInsertPoint(CondBB);
+    Value* CondV = CondExp->codegen(drv);
+    if (!CondV)
+       return nullptr;
+
+    builder->CreateCondBr(CondV, LoopBB, EndBB);
+    
+    //BLOCCO LOOP
+    builder->SetInsertPoint(LoopBB);
+    Value *StmtV = Stmt->codegen(drv);
+    if (!StmtV)
+       return nullptr;
+
+    LoopBB = builder->GetInsertBlock();
+    function->insert(function->end(), CondBB);
     builder->CreateBr(CondBB);
-    
-    // Come già ricordato, la chiamata di codegen in TrueExp potrebbe aver inserito 
-    // altri blocchi (nel caso in cui la parte trueexp sia a sua volta un condizionale).
-    // Ne consegue che il blocco corrente potrebbe non coincidere più con TrueBB.
-    // Il branch alla parte merge deve però essere effettuato dal blocco corrente,
-    // che dunque va recuperato. Ed è fondamentale sapere da quale blocco origina
-    // il salto perché tale informazione verrà utilizzata da un'istruzione PHI.
-    // Nel caso in cui non sia stato inserito alcun nuovo blocco, la seguente
-    // istruzione corrisponde ad una NO-OP
-    StmtBB = builder->GetInsertBlock();
-    //function->insert(function->end(), EndBB);
-    
-    // "Posizioniamo" il builder all'inizio del blocco false, 
-    // generiamo ricorsivamente il codice da eseguire in caso di
-    // condizione falsa e, in chiusura di blocco, generiamo il saldo 
-    // incondizionato al blocco merge
-   
-    
-    // Andiamo dunque a generare il codice per la parte dove i due "flussi"
-    // di esecuzione si riuniscono. Impostiamo correttamente il builder
+
+    //BLOCCO END
     builder->SetInsertPoint(EndBB);
-  
-    // Il codice di riunione dei flussi è una "semplice" istruzione PHI: 
-    //a seconda del blocco da cui arriva il flusso, TrueBB o FalseBB, il valore
-    // del costrutto condizionale (si ricordi che si tratta di un "expression if")
-    // deve essere copiato (in un nuovo registro SSA) da TrueV o da FalseV
-    // La creazione di un'istruzione PHI avviene però in due passi, in quanto
-    // il numero di "flussi entranti" non è fissato.
-    // 1) Dapprima si crea il nodo PHI specificando quanti sono i possibili nodi sorgente
-    // 2) Per ogni possibile nodo sorgente, viene poi inserita l'etichetta e il registro
-    //    SSA da cui prelevare il valore 
-    PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
-    PN->addIncoming(StmtV, StmtBB);
-    return PN;
+
+    //PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
+    //PN->addIncoming(StmtV, LoopBB);
+
+    drv.NamedValues[Init->getName()] = AllocaTmp;
+
+    return ConstantFP::get(*context, APFloat(0.0));
 };
