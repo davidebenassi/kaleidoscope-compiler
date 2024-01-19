@@ -109,7 +109,7 @@ external:
 proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
   
-globalvar :
+globalvar:
  "global" "id"         { $$ = new GlobalValueAST($2); };
 
 idseq:

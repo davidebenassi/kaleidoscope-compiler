@@ -197,14 +197,13 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-/// GlobalValueAST
+/// GlobalValueAST - Classe per le variabili globali
 class GlobalValueAST: public RootAST {
 private:
   const std::string Name;
 public:
   GlobalValueAST(const std::string Name);
-  AllocaInst *codegen(driver& drv) override;
-  const std::string& getName() const;
+  Value *codegen(driver& drv) override;
 };
 
 #endif // ! DRIVER_HH

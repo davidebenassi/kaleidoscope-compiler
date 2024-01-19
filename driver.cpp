@@ -104,8 +104,15 @@ lexval VariableExprAST::getLexVal() const {
 // il nome del registro in cui verrà trasferito il valore dalla memoria
 Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
-  if (!A)
-     return LogErrorV("Variabile "+Name+" non definita");
+  if (!A){
+     GlobalVariable* A = module->getNamedGlobal(Name);
+
+     if (!A)
+      return LogErrorV("Variabile "+Name+" non definita");
+
+     return builder->CreateLoad(A->getValueType(), A, Name.c_str());
+  }
+  
   return builder->CreateLoad(A->getAllocatedType(), A, Name.c_str());
 }
 
@@ -482,26 +489,43 @@ Function *FunctionAST::codegen(driver& drv) {
 AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  Name(Name), Val(Val) {};
 
 Value* AssignmentExprAST::codegen(driver& drv) {
+  
   Value *BoundVal = Val->codegen(drv);
 
   if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
     return nullptr;
-
+  
   AllocaInst* Alloca = drv.NamedValues[Name];
-  builder->CreateStore(BoundVal, Alloca);
+  if(!Alloca){
+    GlobalVariable* A = module->getNamedGlobal(Name);
+    
+    if (!A)
+      return LogErrorV("Variabile "+Name+" non definita");
 
+    builder->CreateStore(BoundVal, A);
+    return A;
+  }
+
+  builder->CreateStore(BoundVal, Alloca);
   return Alloca;
 }
 
 /********************** Global Value Tree *********************/
 GlobalValueAST::GlobalValueAST(std::string Name):  Name(Name){};
 
-AllocaInst* GlobalValueAST::codegen(driver& drv) {
-  
-  Function *fun = builder->GetInsertBlock()->getParent();
-  AllocaInst *Alloca = CreateEntryBlockAlloca(fun, Name);
-  builder->CreateStore(nullptr, Alloca);
+Value* GlobalValueAST::codegen(driver& drv) {
 
-  return Alloca;
+
+  GlobalVariable *var = new GlobalVariable(
+                                          *module, 
+                                          Type::getDoubleTy(*context),
+                                          false, 
+                                          GlobalValue::CommonLinkage, 
+                                          ConstantFP::get(*context, APFloat(0.0)), 
+                                          Name
+                                        );
+  var->print(errs());
+  fprintf(stderr, "\n");
+  return var;
 
 }
