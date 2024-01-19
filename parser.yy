@@ -83,7 +83,7 @@
 %type <VarBindingAST*> binding
 %type <std::vector<ExprAST*>> stmts;
 %type <ExprAST*> stmt;
-%type <AssignmentExprAST*> assignment;
+%type <ExprAST*> assignment;
 %type <ExprAST*>initexp;
 %type <GlobalValueAST*> globalvar;
 //%type <ExprAST*> ifstmt;
@@ -144,7 +144,11 @@ stmt:
 
 
 assignment:
- "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); };
+ "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); }
+| "+" "+" exp                { $$ = new UnaryExprAST('+', $3); }
+| "-" "-" exp                { $$ = new UnaryExprAST('-', $3); }
+| exp "+" "+"                { $$ = new UnaryExprAST('+', $1); }
+| exp "-" "-"                { $$ = new UnaryExprAST('-', $1); };
 
 block:
   "{" stmts "}"               { std::vector<VarBindingAST*> definitions;
@@ -160,11 +164,7 @@ exp:
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; }
-| block                 { $$ = $1; }
-| "+" "+" exp           { $$ = new UnaryExprAST('+', $3); }
-| "-" "-" exp           { $$ = new UnaryExprAST('-', $3); }
-| exp "+" "+"           { $$ = new UnaryExprAST('+', $1); }
-| exp "-" "-"           { $$ = new UnaryExprAST('-', $1); };
+| block                 { $$ = $1; };
 
 //ifstmt :
 //  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }

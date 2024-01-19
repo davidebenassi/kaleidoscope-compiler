@@ -104,9 +104,9 @@ lexval VariableExprAST::getLexVal() const {
 // il nome del registro in cui verrà trasferito il valore dalla memoria
 Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
+
   if (!A){
      GlobalVariable* A = module->getNamedGlobal(Name);
-
      if (!A)
       return LogErrorV("Variabile "+Name+" non definita");
 
@@ -344,6 +344,8 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    // di un parametro oppure di una variabile locale ad un blocco espressione)
    // viene sempre riservato nell'entry block della funzione. Ricordiamo che
    // l'allocazione viene fatta tramite l'utility CreateEntryBlockAlloca
+   
+
    Function *fun = builder->GetInsertBlock()->getParent();
    // Ora viene generato il codice che definisce il valore della variabile
    Value *BoundVal = Val->codegen(drv);
@@ -357,6 +359,7 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    
    // L'istruzione di allocazione (che include il registro "puntatore" all'area di memoria
    // allocata) viene restituita per essere inserita nella symbol table
+   errs()<<Alloca;
    return Alloca;
 };
 
@@ -541,12 +544,11 @@ Value *UnaryExprAST::codegen(driver& drv) {
   Value *V = Var->codegen(drv);
   if (!V) 
      return nullptr;
-
   switch (Op) {
   case '+':
-    return builder->CreateFAdd(V,1,"addres");
+    return builder->CreateFAdd(V,ConstantFP::get(*context, APFloat(1.0)),"addres");
   case '-':
-    return builder->CreateFSub(V,1,"subres");
+    return builder->CreateFSub(V,ConstantFP::get(*context, APFloat(1.0)),"subres");
   default:  
     std::cout << Op << std::endl;
     return LogErrorV("Operatore binario non supportato");
@@ -554,13 +556,16 @@ Value *UnaryExprAST::codegen(driver& drv) {
 };
 
 /********************** For Expression Tree *********************/
-ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
+ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
     Value* InitV = Init->codegen(drv);
+    
     if (!InitV)
        return nullptr;
+    
+    //drv.NamedValues[InitV->getName()] = InitV;
 
     Value* CondV = CondExp->codegen(drv);
     if (!CondV)
