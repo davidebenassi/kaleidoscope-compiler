@@ -23,6 +23,7 @@
   class VarBindingAST;
   class AssignmentExprAST;
   class GlobalValueAST;
+  class ForExprAST;
 }
 
 // The parsing context.
@@ -137,7 +138,7 @@ stmt:
   assignment                 { $$ = $1; }          
 | block                      { $$ = $1; }
 | exp                        { $$ = $1; }
-| ifstmt                     { $$ = $1; }
+//| ifstmt                     { $$ = $1; }
 | forstmt                    { $$ = $1; };
 
 
@@ -158,14 +159,15 @@ exp:
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; }
-| block                 { $$ = $1; };
+| block                 { $$ = $1; }
+//| "+" "+" "id"          {}
 
 //ifstmt :
 //  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
 //| "if" "(" condexp ")" stmt " else " stmt    { $$ = new IfExprAST($3,$5,$7); };
 
 forstmt :
-" for " "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
+  "for" "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
 
 init :
   binding             { $$ = $1; }

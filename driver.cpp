@@ -530,15 +530,16 @@ Value* GlobalValueAST::codegen(driver& drv) {
 }
 
 /********************** For Expression Tree *********************/
-ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
+ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
-    // Viene dapprima generato il codice per valutare la condizione, che
-    // memorizza il risultato (di tipo i1, dunque booleano) nel registro SSA 
-    // che viene "memorizzato" in CondV. 
     Value* InitV = Init->codegen(drv);
     if (!InitV)
+       return nullptr;
+
+    Value* CondV = CondExp->codegen(drv);
+    if (!CondV)
        return nullptr;
     
     // Ora bisogna generare l'istruzione di salto condizionato, ma prima
@@ -560,13 +561,19 @@ Value* ForExprAST::codegen(driver& drv) {
     
     // "Posizioniamo" il builder all'inizio del blocco true, 
     // generiamo ricorsivamente il codice da eseguire in caso di
-    // condizione vera e, in chiusura di blocco, generiamo il saldo 
+    // condizione vera e, in chiusura di blocco, generiamo il salto 
     // incondizionato al blocco merge
-    builder->SetInsertPoint(TrueBB);
-    Value *TrueV = TrueExp->codegen(drv);
-    if (!TrueV)
+    builder->SetInsertPoint(StmtBB);
+    Value *StmtV = Stmt->codegen(drv);
+    if (!StmtV)
        return nullptr;
-    builder->CreateBr(MergeBB);
+
+    //Esecuzione assegnamento (incremento)
+    Value *AssignedV = Assignment->codegen(drv);
+    if (!AssignedV)
+        return nullptr;
+
+    builder->CreateBr(CondBB);
     
     // Come già ricordato, la chiamata di codegen in TrueExp potrebbe aver inserito 
     // altri blocchi (nel caso in cui la parte trueexp sia a sua volta un condizionale).
@@ -576,29 +583,18 @@ Value* ForExprAST::codegen(driver& drv) {
     // il salto perché tale informazione verrà utilizzata da un'istruzione PHI.
     // Nel caso in cui non sia stato inserito alcun nuovo blocco, la seguente
     // istruzione corrisponde ad una NO-OP
-    TrueBB = builder->GetInsertBlock();
-    function->insert(function->end(), FalseBB);
+    StmtBB = builder->GetInsertBlock();
+    //function->insert(function->end(), EndBB);
     
     // "Posizioniamo" il builder all'inizio del blocco false, 
     // generiamo ricorsivamente il codice da eseguire in caso di
     // condizione falsa e, in chiusura di blocco, generiamo il saldo 
     // incondizionato al blocco merge
-    builder->SetInsertPoint(FalseBB);
-    
-    Value *FalseV = FalseExp->codegen(drv);
-    if (!FalseV)
-       return nullptr;
-    builder->CreateBr(MergeBB);
-    
-    // Esattamente per la ragione spiegata sopra (ovvero il possibile inserimento
-    // di nuovi blocchi da parte della chiamata di codegen in FalseExp), andiamo ora
-    // a recuperare il blocco corrente 
-    FalseBB = builder->GetInsertBlock();
-    function->insert(function->end(), MergeBB);
+   
     
     // Andiamo dunque a generare il codice per la parte dove i due "flussi"
     // di esecuzione si riuniscono. Impostiamo correttamente il builder
-    builder->SetInsertPoint(MergeBB);
+    builder->SetInsertPoint(EndBB);
   
     // Il codice di riunione dei flussi è una "semplice" istruzione PHI: 
     //a seconda del blocco da cui arriva il flusso, TrueBB o FalseBB, il valore
@@ -609,8 +605,7 @@ Value* ForExprAST::codegen(driver& drv) {
     // 1) Dapprima si crea il nodo PHI specificando quanti sono i possibili nodi sorgente
     // 2) Per ogni possibile nodo sorgente, viene poi inserita l'etichetta e il registro
     //    SSA da cui prelevare il valore 
-    PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
-    PN->addIncoming(TrueV, TrueBB);
-    PN->addIncoming(FalseV, FalseBB);
+    PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
+    PN->addIncoming(StmtV, StmtBB);
     return PN;
 };
