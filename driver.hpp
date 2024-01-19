@@ -178,7 +178,7 @@ private:
   PrototypeAST* Proto;
   ExprAST* Body;
   bool external;
-  
+
 public:
   FunctionAST(PrototypeAST* Proto, ExprAST* Body);
   Function *codegen(driver& drv) override;
@@ -201,6 +201,7 @@ public:
 class GlobalValueAST: public RootAST {
 private:
   const std::string Name;
+  
 public:
   GlobalValueAST(const std::string Name);
   Value *codegen(driver& drv) override;
