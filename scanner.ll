@@ -64,6 +64,8 @@ blank   [ \t]
 "global" { return yy::parser::make_GLOBAL(loc); }
 "for"    { return yy::parser::make_FOR(loc); }
 
+"if"     { return yy::parser::make_IF(loc); }
+
 {id}     { return yy::parser::make_IDENTIFIER (yytext, loc); }
 
 .        { throw yy::parser::syntax_error

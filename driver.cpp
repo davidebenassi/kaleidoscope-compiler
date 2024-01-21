@@ -590,9 +590,9 @@ Value* ForExprAST::codegen(driver& drv) {
     Function *function = builder->GetInsertBlock()->getParent();
     
     BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
-    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop", function);
-    BasicBlock *EndBB = BasicBlock::Create(*context, "end", function);
-    
+    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop");
+    BasicBlock *EndBB = BasicBlock::Create(*context, "end");
+
     builder->CreateBr(CondBB);
 
     //BLOCCO CONDIZIONE
@@ -601,7 +601,10 @@ Value* ForExprAST::codegen(driver& drv) {
     if (!CondV)
        return nullptr;
     builder->CreateCondBr(CondV, LoopBB, EndBB);
-    
+
+    CondBB = builder->GetInsertBlock();
+    function->insert(function->end(), LoopBB);
+
     //BLOCCO LOOP
     builder->SetInsertPoint(LoopBB);
     Value *StmtV = Stmt->codegen(drv);
@@ -613,18 +616,17 @@ Value* ForExprAST::codegen(driver& drv) {
     if (!AssignedV)
         return nullptr;
 
-    LoopBB = builder->GetInsertBlock();
-    function->insert(function->end(), CondBB);
-
     builder->CreateBr(CondBB);
+
+    LoopBB = builder->GetInsertBlock();
+    function->insert(function->end(), EndBB);
+
 
     //BLOCCO END
     builder->SetInsertPoint(EndBB);
 
     drv.NamedValues[Init->getName()] = AllocaTmp;
 
-     //PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
-    //PN->addIncoming(StmtV, LoopBB);
 
     return Constant::getNullValue(Type::getDoubleTy(*context));
 };

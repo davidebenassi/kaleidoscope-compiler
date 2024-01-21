@@ -13,6 +13,7 @@
   class driver;
   class RootAST;
   class ExprAST;
+  class IfExprAST;
   class NumberExprAST;
   class VariableExprAST;
   class CallExprAST;
@@ -24,7 +25,6 @@
   class AssignmentExprAST;
   class GlobalValueAST;
   class ForExprAST;
-  class UnaryExprAST;
 }
 
 // The parsing context.
@@ -62,6 +62,7 @@
   VAR        "var"
   GLOBAL     "global"
   FOR        "for"
+  IF         "if"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -86,7 +87,7 @@
 %type <ExprAST*> assignment
 %type <ExprAST*>initexp
 %type <GlobalValueAST*> globalvar
-//%type <ExprAST*> ifstmt
+%type <ExprAST*> ifstmt
 %type <ForExprAST*> forstmt
 %type <VarBindingAST*> init
 
@@ -139,7 +140,7 @@ stmt:
   assignment                 { $$ = $1; }          
 | block                      { $$ = $1; }
 | exp                        { $$ = $1; }
-//| ifstmt                     { $$ = $1; }
+| ifstmt                     { $$ = $1; }
 | forstmt                    { $$ = $1; };
 
 
@@ -163,9 +164,9 @@ exp:
 | "number"              { $$ = new NumberExprAST($1); }
 | expif                 { $$ = $1; };
 
-//ifstmt :
-//  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
-//| "if" "(" condexp ")" stmt " else " stmt    { $$ = new IfExprAST($3,$5,$7); };
+ifstmt :
+  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
+| "if" "(" condexp ")" stmt " else " stmt    { $$ = new IfExprAST($3,$5,$7); };
 
 forstmt :
   "for" "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
@@ -196,8 +197,8 @@ condexp:
 | exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); };
 
 idexp:
-  "id"                  { $$ = new VariableExprAST($1); }
-| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); };
+  "id"                      { $$ = new VariableExprAST($1); }
+| "id" "(" optexp ")"       { $$ = new CallExprAST($1,$3); };
 
 optexp:
   %empty                { std::vector<ExprAST*> args;
@@ -209,6 +210,7 @@ explist:
                           args.push_back($1);
 			                    $$ = args;
                         }
+  
 | exp "," explist       { $3.insert($3.begin(), $1); $$ = $3; };
  
 %%
