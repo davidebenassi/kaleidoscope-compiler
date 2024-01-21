@@ -144,7 +144,7 @@ stmt:
 
 
 assignment:
- "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); }
+ "id" "=" exp                 { $$ = new AssignmentExprAST($1, $3); }
 | "+" "+" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('+', new VariableExprAST($3), new NumberExprAST(1.0))); }
 | "-" "-" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('-', new VariableExprAST($3), new NumberExprAST(1.0))); };
 

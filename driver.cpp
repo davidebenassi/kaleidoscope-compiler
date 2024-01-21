@@ -104,7 +104,6 @@ lexval VariableExprAST::getLexVal() const {
 // il nome del registro in cui verrà trasferito il valore dalla memoria
 Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
-
   if (!A){
      GlobalVariable* A = module->getNamedGlobal(Name);
      if (!A)
@@ -112,7 +111,6 @@ Value *VariableExprAST::codegen(driver& drv) {
 
      return builder->CreateLoad(A->getValueType(), A, Name.c_str());
   }
-  
   return builder->CreateLoad(A->getAllocatedType(), A, Name.c_str());
 }
 
@@ -345,7 +343,6 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    // di un parametro oppure di una variabile locale ad un blocco espressione)
    // viene sempre riservato nell'entry block della funzione. Ricordiamo che
    // l'allocazione viene fatta tramite l'utility CreateEntryBlockAlloca
-   
 
    Function *fun = builder->GetInsertBlock()->getParent();
    // Ora viene generato il codice che definisce il valore della variabile
@@ -360,7 +357,6 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    
    // L'istruzione di allocazione (che include il registro "puntatore" all'area di memoria
    // allocata) viene restituita per essere inserita nella symbol table
- 
    return Alloca;
 };
 
@@ -582,36 +578,28 @@ ForExprAST::ForExprAST(VarBindingAST* Init, ExprAST* CondExp, ExprAST* Assignmen
 Value* ForExprAST::codegen(driver& drv) {
 
     AllocaInst* InitV = Init->codegen(drv);
-
     if (!InitV)
        return nullptr;
       
     AllocaInst* AllocaTmp = drv.NamedValues[Init->getName()];
     drv.NamedValues[Init->getName()] = InitV;
 
-
-    
-    //Esecuzione assegnamento (incremento)
-    Value *AssignedV = Assignment->codegen(drv);
-    if (!AssignedV)
-        return nullptr;
-
     // Ora bisogna generare l'istruzione di salto condizionato, ma prima
     // vanno creati i corrispondenti basic block nella funzione attuale
     // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
     Function *function = builder->GetInsertBlock()->getParent();
     
-
-    BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function);
-    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop");
-    BasicBlock *EndBB = BasicBlock::Create(*context, "end");
+    BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
+    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop", function);
+    BasicBlock *EndBB = BasicBlock::Create(*context, "end", function);
     
+    builder->CreateBr(CondBB);
+
     //BLOCCO CONDIZIONE
     builder->SetInsertPoint(CondBB);
     Value* CondV = CondExp->codegen(drv);
     if (!CondV)
        return nullptr;
-
     builder->CreateCondBr(CondV, LoopBB, EndBB);
     
     //BLOCCO LOOP
@@ -620,17 +608,23 @@ Value* ForExprAST::codegen(driver& drv) {
     if (!StmtV)
        return nullptr;
 
+    //Esecuzione assegnamento (incremento)
+    Value *AssignedV = Assignment->codegen(drv);
+    if (!AssignedV)
+        return nullptr;
+
     LoopBB = builder->GetInsertBlock();
     function->insert(function->end(), CondBB);
+
     builder->CreateBr(CondBB);
 
     //BLOCCO END
     builder->SetInsertPoint(EndBB);
 
-    //PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
-    //PN->addIncoming(StmtV, LoopBB);
-
     drv.NamedValues[Init->getName()] = AllocaTmp;
 
-    return ConstantFP::get(*context, APFloat(0.0));
+     //PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 1, "condval");
+    //PN->addIncoming(StmtV, LoopBB);
+
+    return Constant::getNullValue(Type::getDoubleTy(*context));
 };
