@@ -199,7 +199,8 @@ condexp:
 
 idexp:
   "id"                  { $$ = new VariableExprAST($1); }
-| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); };
+| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); }
+| "-" "id"              { $$ = new BinaryExprAST('-', new NumberExprAST(0.0), new VariableExprAST($2)); };
 
 optexp:
   %empty                { std::vector<ExprAST*> args;

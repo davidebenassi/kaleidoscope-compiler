@@ -576,13 +576,16 @@ ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, Exp
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
-    VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
+    
     AllocaInst* AllocaTmp;
+
+    // Prova di casting a VarBinding -- se fallisce ritorna nullptr -> entra nel ramo else
+    VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
     if (InitCasted){
       AllocaInst* InitV = InitCasted->codegen(drv);
       if (!InitV)
         return nullptr;
-        
+
       AllocaTmp = drv.NamedValues[InitCasted->getName()];
       drv.NamedValues[InitCasted->getName()] = InitV;
     }
@@ -594,9 +597,6 @@ Value* ForExprAST::codegen(driver& drv) {
       //COMPLETA
     }
     
-    // Ora bisogna generare l'istruzione di salto condizionato, ma prima
-    // vanno creati i corrispondenti basic block nella funzione attuale
-    // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
     Function *function = builder->GetInsertBlock()->getParent();
     
     BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
@@ -634,8 +634,10 @@ Value* ForExprAST::codegen(driver& drv) {
 
     //BLOCCO END
     builder->SetInsertPoint(EndBB);
-
-    drv.NamedValues[InitCasted->getName()] = AllocaTmp;
+    
+    // Verifico se devo fare il restore di AllocaTmp
+    if(AllocaTmp)
+      drv.NamedValues[InitCasted->getName()] = AllocaTmp;
 
 
     return Constant::getNullValue(Type::getDoubleTy(*context));
