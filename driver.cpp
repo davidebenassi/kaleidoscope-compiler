@@ -204,15 +204,20 @@ Value* IfExprAST::codegen(driver& drv) {
     Function *function = builder->GetInsertBlock()->getParent();
     BasicBlock *TrueBB =  BasicBlock::Create(*context, "trueexp", function);
     // Il blocco TrueBB viene inserito nella funzione dopo il blocco corrente
-    BasicBlock *FalseBB = BasicBlock::Create(*context, "falseexp");
+    BasicBlock *FalseBB;
     BasicBlock *MergeBB = BasicBlock::Create(*context, "endcond");
     // Gli altri due blocchi non vengono ancora inseriti perché le istruzioni
     // previste nel "ramo" true del condizionale potrebbe dare luogo alla creazione
     // di altri blocchi, che naturalmente andrebbero inseriti prima di FalseBB
     
     // Ora possiamo creare l'istruzione di salto condizionato
-    builder->CreateCondBr(CondV, TrueBB, FalseBB);
-    
+    if(FalseExp){
+      FalseBB = BasicBlock::Create(*context, "falseexp");
+      builder->CreateCondBr(CondV, TrueBB, FalseBB);
+    }
+    else
+      builder->CreateCondBr(CondV, TrueBB, MergeBB);
+
     // "Posizioniamo" il builder all'inizio del blocco true, 
     // generiamo ricorsivamente il codice da eseguire in caso di
     // condizione vera e, in chiusura di blocco, generiamo il saldo 
@@ -232,24 +237,33 @@ Value* IfExprAST::codegen(driver& drv) {
     // Nel caso in cui non sia stato inserito alcun nuovo blocco, la seguente
     // istruzione corrisponde ad una NO-OP
     TrueBB = builder->GetInsertBlock();
-    function->insert(function->end(), FalseBB);
+
+    Value *FalseV;
+    if(FalseExp) {
+      function->insert(function->end(), FalseBB);
+
+      // "Posizioniamo" il builder all'inizio del blocco false, 
+      // generiamo ricorsivamente il codice da eseguire in caso di
+      // condizione falsa e, in chiusura di blocco, generiamo il saldo 
+      // incondizionato al blocco merge
+      builder->SetInsertPoint(FalseBB);
+      
+      FalseV = FalseExp->codegen(drv);
+      if (!FalseV)
+        return nullptr;
+      builder->CreateBr(MergeBB);
+      
+      // Esattamente per la ragione spiegata sopra (ovvero il possibile inserimento
+      // di nuovi blocchi da parte della chiamata di codegen in FalseExp), andiamo ora
+      // a recuperare il blocco corrente 
+      FalseBB = builder->GetInsertBlock();
+      function->insert(function->end(), MergeBB);
+    }
+    else
+      function->insert(function->end(), MergeBB);
     
-    // "Posizioniamo" il builder all'inizio del blocco false, 
-    // generiamo ricorsivamente il codice da eseguire in caso di
-    // condizione falsa e, in chiusura di blocco, generiamo il saldo 
-    // incondizionato al blocco merge
-    builder->SetInsertPoint(FalseBB);
     
-    Value *FalseV = FalseExp->codegen(drv);
-    if (!FalseV)
-       return nullptr;
-    builder->CreateBr(MergeBB);
-    
-    // Esattamente per la ragione spiegata sopra (ovvero il possibile inserimento
-    // di nuovi blocchi da parte della chiamata di codegen in FalseExp), andiamo ora
-    // a recuperare il blocco corrente 
-    FalseBB = builder->GetInsertBlock();
-    function->insert(function->end(), MergeBB);
+
     
     // Andiamo dunque a generare il codice per la parte dove i due "flussi"
     // di esecuzione si riuniscono. Impostiamo correttamente il builder
@@ -264,10 +278,14 @@ Value* IfExprAST::codegen(driver& drv) {
     // 1) Dapprima si crea il nodo PHI specificando quanti sono i possibili nodi sorgente
     // 2) Per ogni possibile nodo sorgente, viene poi inserita l'etichetta e il registro
     //    SSA da cui prelevare il valore 
-    PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
-    PN->addIncoming(TrueV, TrueBB);
-    PN->addIncoming(FalseV, FalseBB);
-    return PN;
+    if(FalseExp) {
+      PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
+      PN->addIncoming(TrueV, TrueBB);
+      PN->addIncoming(FalseV, FalseBB);
+      return PN;
+    }
+    else
+      return Constant::getNullValue(Type::getDoubleTy(*context));
 };
 
 /********************** Block Expression Tree *********************/
