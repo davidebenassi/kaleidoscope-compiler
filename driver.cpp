@@ -572,18 +572,28 @@ Value UnaryExprAST::codegen(driver& drv) {
 }; */
 
 /********************** For Expression Tree *********************/
-ForExprAST::ForExprAST(VarBindingAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
+ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
-
-    AllocaInst* InitV = Init->codegen(drv);
-    if (!InitV)
-       return nullptr;
-      
-    AllocaInst* AllocaTmp = drv.NamedValues[Init->getName()];
-    drv.NamedValues[Init->getName()] = InitV;
-
+    VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
+    AllocaInst* AllocaTmp;
+    if (InitCasted){
+      AllocaInst* InitV = InitCasted->codegen(drv);
+      if (!InitV)
+        return nullptr;
+        
+      AllocaTmp = drv.NamedValues[InitCasted->getName()];
+      drv.NamedValues[InitCasted->getName()] = InitV;
+    }
+    else{
+      AssignmentExprAST* InitCasted = dynamic_cast<AssignmentExprAST*>(Init);
+      Value* InitV = InitCasted->codegen(drv);
+      if (!InitV)
+        return nullptr;
+      //COMPLETA
+    }
+    
     // Ora bisogna generare l'istruzione di salto condizionato, ma prima
     // vanno creati i corrispondenti basic block nella funzione attuale
     // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
@@ -625,7 +635,7 @@ Value* ForExprAST::codegen(driver& drv) {
     //BLOCCO END
     builder->SetInsertPoint(EndBB);
 
-    drv.NamedValues[Init->getName()] = AllocaTmp;
+    drv.NamedValues[InitCasted->getName()] = AllocaTmp;
 
 
     return Constant::getNullValue(Type::getDoubleTy(*context));

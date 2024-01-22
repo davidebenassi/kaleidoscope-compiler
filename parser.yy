@@ -63,6 +63,7 @@
   GLOBAL     "global"
   FOR        "for"
   IF         "if"
+  ELSE       "else"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -89,7 +90,7 @@
 %type <GlobalValueAST*> globalvar
 %type <ExprAST*> ifstmt
 %type <ForExprAST*> forstmt
-%type <VarBindingAST*> init
+%type <RootAST*> init
 
 %%
 %start startsymb;
@@ -166,14 +167,14 @@ exp:
 
 ifstmt :
   "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
-| "if" "(" condexp ")" stmt " else " stmt    { $$ = new IfExprAST($3,$5,$7); };
+| "if" "(" condexp ")" stmt "else" stmt      { $$ = new IfExprAST($3,$5,$7); };
 
 forstmt :
   "for" "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
 
 init :
-  binding             { $$ = $1; };
-//| assignment          { $$ = $1; }; 
+  binding             { $$ = $1; }
+| assignment          { $$ = $1; }; 
 
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;
@@ -197,8 +198,8 @@ condexp:
 | exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); };
 
 idexp:
-  "id"                      { $$ = new VariableExprAST($1); }
-| "id" "(" optexp ")"       { $$ = new CallExprAST($1,$3); };
+  "id"                  { $$ = new VariableExprAST($1); }
+| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); };
 
 optexp:
   %empty                { std::vector<ExprAST*> args;
@@ -210,7 +211,6 @@ explist:
                           args.push_back($1);
 			                    $$ = args;
                         }
-  
 | exp "," explist       { $3.insert($3.begin(), $1); $$ = $3; };
  
 %%

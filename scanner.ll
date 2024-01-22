@@ -65,6 +65,7 @@ blank   [ \t]
 "for"    { return yy::parser::make_FOR(loc); }
 
 "if"     { return yy::parser::make_IF(loc); }
+"else"     { return yy::parser::make_ELSE(loc); }
 
 {id}     { return yy::parser::make_IDENTIFIER (yytext, loc); }
 

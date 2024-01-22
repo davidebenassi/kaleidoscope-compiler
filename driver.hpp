@@ -209,12 +209,12 @@ public:
 /// ForExprAST - Classe per l'implementazione del costrutto for
 class ForExprAST : public ExprAST {
 private:
-  VarBindingAST* Init;
+  RootAST* Init;
   ExprAST* CondExp;
   ExprAST* Assignment;
   ExprAST* Stmt;
 public:
-  ForExprAST(VarBindingAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt);
+  ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt);
   Value *codegen(driver& drv) override;
 };
 
