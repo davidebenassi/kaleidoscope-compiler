@@ -130,7 +130,7 @@ private:
   ExprAST* TrueExp;
   ExprAST* FalseExp;
 public:
-  IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp);
+  IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp=nullptr);
   Value *codegen(driver& drv) override;
 };
 
@@ -193,7 +193,6 @@ private:
 
 public:
   AssignmentExprAST(std::string Name, ExprAST* Val);
-  //lexval getLexVal() const override;
   Value *codegen(driver& drv) override;
 };
 
@@ -206,5 +205,18 @@ public:
   GlobalValueAST(const std::string Name);
   Value *codegen(driver& drv) override;
 };
+
+/// ForExprAST - Classe per l'implementazione del costrutto for
+class ForExprAST : public ExprAST {
+private:
+  RootAST* Init;
+  ExprAST* CondExp;
+  AssignmentExprAST* Assignment;
+  ExprAST* Stmt;
+public:
+  ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt);
+  Value *codegen(driver& drv) override;
+};
+
 
 #endif // ! DRIVER_HH

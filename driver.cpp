@@ -106,13 +106,11 @@ Value *VariableExprAST::codegen(driver& drv) {
   AllocaInst *A = drv.NamedValues[Name];
   if (!A){
      GlobalVariable* A = module->getNamedGlobal(Name);
-
      if (!A)
       return LogErrorV("Variabile "+Name+" non definita");
 
      return builder->CreateLoad(A->getValueType(), A, Name.c_str());
   }
-  
   return builder->CreateLoad(A->getAllocatedType(), A, Name.c_str());
 }
 
@@ -125,6 +123,7 @@ BinaryExprAST::BinaryExprAST(char Op, ExprAST* LHS, ExprAST* RHS):
 // operando. Con i valori memorizzati in altrettanti registri SSA si
 // costruisce l'istruzione utilizzando l'opportuno operatore
 Value *BinaryExprAST::codegen(driver& drv) {
+  
   Value *L = LHS->codegen(drv);
   Value *R = RHS->codegen(drv);
   if (!L || !R) 
@@ -192,6 +191,8 @@ IfExprAST::IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp):
    Cond(Cond), TrueExp(TrueExp), FalseExp(FalseExp) {};
    
 Value* IfExprAST::codegen(driver& drv) {
+
+    BasicBlock *CondBB = builder->GetInsertBlock();
     // Viene dapprima generato il codice per valutare la condizione, che
     // memorizza il risultato (di tipo i1, dunque booleano) nel registro SSA 
     // che viene "memorizzato" in CondV. 
@@ -202,18 +203,24 @@ Value* IfExprAST::codegen(driver& drv) {
     // Ora bisogna generare l'istruzione di salto condizionato, ma prima
     // vanno creati i corrispondenti basic block nella funzione attuale
     // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
+    
     Function *function = builder->GetInsertBlock()->getParent();
     BasicBlock *TrueBB =  BasicBlock::Create(*context, "trueexp", function);
     // Il blocco TrueBB viene inserito nella funzione dopo il blocco corrente
-    BasicBlock *FalseBB = BasicBlock::Create(*context, "falseexp");
+    BasicBlock *FalseBB;
     BasicBlock *MergeBB = BasicBlock::Create(*context, "endcond");
     // Gli altri due blocchi non vengono ancora inseriti perché le istruzioni
     // previste nel "ramo" true del condizionale potrebbe dare luogo alla creazione
     // di altri blocchi, che naturalmente andrebbero inseriti prima di FalseBB
     
-    // Ora possiamo crere l'istruzione di salto condizionato
-    builder->CreateCondBr(CondV, TrueBB, FalseBB);
-    
+    // Ora possiamo creare l'istruzione di salto condizionato
+    if(FalseExp){
+      FalseBB = BasicBlock::Create(*context, "falseexp");
+      builder->CreateCondBr(CondV, TrueBB, FalseBB);
+    }
+    else
+      builder->CreateCondBr(CondV, TrueBB, MergeBB);
+
     // "Posizioniamo" il builder all'inizio del blocco true, 
     // generiamo ricorsivamente il codice da eseguire in caso di
     // condizione vera e, in chiusura di blocco, generiamo il saldo 
@@ -233,25 +240,31 @@ Value* IfExprAST::codegen(driver& drv) {
     // Nel caso in cui non sia stato inserito alcun nuovo blocco, la seguente
     // istruzione corrisponde ad una NO-OP
     TrueBB = builder->GetInsertBlock();
-    function->insert(function->end(), FalseBB);
-    
-    // "Posizioniamo" il builder all'inizio del blocco false, 
-    // generiamo ricorsivamente il codice da eseguire in caso di
-    // condizione falsa e, in chiusura di blocco, generiamo il saldo 
-    // incondizionato al blocco merge
-    builder->SetInsertPoint(FalseBB);
-    
-    Value *FalseV = FalseExp->codegen(drv);
-    if (!FalseV)
-       return nullptr;
-    builder->CreateBr(MergeBB);
-    
-    // Esattamente per la ragione spiegata sopra (ovvero il possibile inserimento
-    // di nuovi blocchi da parte della chiamata di codegen in FalseExp), andiamo ora
-    // a recuperare il blocco corrente 
-    FalseBB = builder->GetInsertBlock();
-    function->insert(function->end(), MergeBB);
-    
+
+    Value *FalseV;
+    if(FalseExp) {
+      function->insert(function->end(), FalseBB);
+
+      // "Posizioniamo" il builder all'inizio del blocco false, 
+      // generiamo ricorsivamente il codice da eseguire in caso di
+      // condizione falsa e, in chiusura di blocco, generiamo il saldo 
+      // incondizionato al blocco merge
+      builder->SetInsertPoint(FalseBB);
+      
+      FalseV = FalseExp->codegen(drv);
+      if (!FalseV)
+        return nullptr;
+      builder->CreateBr(MergeBB);
+      
+      // Esattamente per la ragione spiegata sopra (ovvero il possibile inserimento
+      // di nuovi blocchi da parte della chiamata di codegen in FalseExp), andiamo ora
+      // a recuperare il blocco corrente 
+      FalseBB = builder->GetInsertBlock();
+      function->insert(function->end(), MergeBB);
+    }
+    else
+      function->insert(function->end(), MergeBB);
+        
     // Andiamo dunque a generare il codice per la parte dove i due "flussi"
     // di esecuzione si riuniscono. Impostiamo correttamente il builder
     builder->SetInsertPoint(MergeBB);
@@ -265,10 +278,27 @@ Value* IfExprAST::codegen(driver& drv) {
     // 1) Dapprima si crea il nodo PHI specificando quanti sono i possibili nodi sorgente
     // 2) Per ogni possibile nodo sorgente, viene poi inserita l'etichetta e il registro
     //    SSA da cui prelevare il valore 
+    /*
+    if(FalseExp) {
+      PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
+      PN->addIncoming(TrueV, TrueBB);
+      PN->addIncoming(FalseV, FalseBB);
+      return PN;
+    }
+    else
+      return Constant::getNullValue(Type::getDoubleTy(*context));
+      */
+    
     PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
     PN->addIncoming(TrueV, TrueBB);
-    PN->addIncoming(FalseV, FalseBB);
+
+    if(FalseExp)
+      PN->addIncoming(FalseV, FalseBB);
+    else
+      PN->addIncoming(Constant::getNullValue(Type::getDoubleTy(*context)), CondBB);
+
     return PN;
+    
 };
 
 /********************** Block Expression Tree *********************/
@@ -344,9 +374,18 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
    // di un parametro oppure di una variabile locale ad un blocco espressione)
    // viene sempre riservato nell'entry block della funzione. Ricordiamo che
    // l'allocazione viene fatta tramite l'utility CreateEntryBlockAlloca
+
    Function *fun = builder->GetInsertBlock()->getParent();
    // Ora viene generato il codice che definisce il valore della variabile
-   Value *BoundVal = Val->codegen(drv);
+
+  Value *BoundVal;
+   if(Val){
+    BoundVal = Val->codegen(drv);
+   }
+   else{
+    BoundVal = (new NumberExprAST(0.0))->codegen(drv);
+   }
+   
    if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
       return nullptr;
    // Se tutto ok, si genera l'struzione che alloca memoria per la variabile ...
@@ -527,5 +566,75 @@ Value* GlobalValueAST::codegen(driver& drv) {
   var->print(errs());
   fprintf(stderr, "\n");
   return var;
-
 }
+
+
+/********************** For Expression Tree *********************/
+ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
+            Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
+
+Value* ForExprAST::codegen(driver& drv) {
+    AllocaInst* AllocaTmp = nullptr;
+
+    // Prova di casting a VarBinding -- se fallisce ritorna nullptr -> entra nel ramo else
+    VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
+    if (InitCasted){
+      AllocaInst* InitV = InitCasted->codegen(drv);
+      if (!InitV)
+        return nullptr;
+
+      AllocaTmp = drv.NamedValues[InitCasted->getName()];
+      drv.NamedValues[InitCasted->getName()] = InitV;
+    }
+    else{
+      AssignmentExprAST* InitCasted = dynamic_cast<AssignmentExprAST*>(Init);
+      Value* InitV = InitCasted->codegen(drv);
+      if (!InitV)
+        return nullptr;
+    }
+
+    Function *function = builder->GetInsertBlock()->getParent();
+    
+    BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
+    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop");
+    BasicBlock *EndBB = BasicBlock::Create(*context, "end");
+
+    builder->CreateBr(CondBB);
+
+    //BLOCCO CONDIZIONE
+    builder->SetInsertPoint(CondBB);
+    Value* CondV = CondExp->codegen(drv);
+    if (!CondV)
+       return nullptr;
+    builder->CreateCondBr(CondV, LoopBB, EndBB);
+
+    CondBB = builder->GetInsertBlock();
+    function->insert(function->end(), LoopBB);
+
+    //BLOCCO LOOP
+    builder->SetInsertPoint(LoopBB);
+    Value *StmtV = Stmt->codegen(drv);
+    if (!StmtV)
+       return nullptr;
+
+    //Esecuzione assegnamento (incremento)
+    Value *AssignedV = Assignment->codegen(drv);
+    if (!AssignedV)
+        return nullptr;
+
+    builder->CreateBr(CondBB);
+
+    LoopBB = builder->GetInsertBlock();
+    function->insert(function->end(), EndBB);
+
+
+    //BLOCCO END
+    builder->SetInsertPoint(EndBB);
+    
+    // Verifico se devo fare il restore di AllocaTmp
+    if(AllocaTmp)
+      drv.NamedValues[InitCasted->getName()] = AllocaTmp;
+
+
+    return Constant::getNullValue(Type::getDoubleTy(*context));
+};

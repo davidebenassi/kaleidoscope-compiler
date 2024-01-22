@@ -13,6 +13,7 @@
   class driver;
   class RootAST;
   class ExprAST;
+  class IfExprAST;
   class NumberExprAST;
   class VariableExprAST;
   class CallExprAST;
@@ -23,6 +24,7 @@
   class VarBindingAST;
   class AssignmentExprAST;
   class GlobalValueAST;
+  class ForExprAST;
 }
 
 // The parsing context.
@@ -59,6 +61,9 @@
   DEF        "def"
   VAR        "var"
   GLOBAL     "global"
+  FOR        "for"
+  IF         "if"
+  ELSE       "else"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -78,11 +83,14 @@
 %type <BlockExprAST*> block
 %type <std::vector<VarBindingAST*>> vardefs
 %type <VarBindingAST*> binding
-%type <std::vector<ExprAST*>> stmts;
-%type <ExprAST*> stmt;
-%type <AssignmentExprAST*> assignment;
-%type <ExprAST*>initexp;
-%type <GlobalValueAST*> globalvar;
+%type <std::vector<ExprAST*>> stmts
+%type <ExprAST*> stmt
+%type <AssignmentExprAST*> assignment
+%type <ExprAST*>initexp
+%type <GlobalValueAST*> globalvar
+%type <ExprAST*> ifstmt
+%type <ForExprAST*> forstmt
+%type <RootAST*> init
 
 %%
 %start startsymb;
@@ -101,7 +109,7 @@ top:
 | globalvar             { $$ = $1; };
 
 definition:
-  "def" proto exp       { $$ = new FunctionAST($2,$3); $2->noemit(); };
+  "def" proto block       { $$ = new FunctionAST($2,$3); $2->noemit(); };
 
 external:
   "extern" proto        { $$ = $2; };
@@ -121,6 +129,7 @@ idseq:
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
+%right "else" ")";
 
 stmts:
   stmt                  { std::vector<ExprAST*> args;
@@ -132,9 +141,15 @@ stmts:
 stmt:
   assignment                 { $$ = $1; }          
 | block                      { $$ = $1; }
-| exp                        { $$ = $1; };
+| exp                        { $$ = $1; }
+| ifstmt                     { $$ = $1; }
+| forstmt                    { $$ = $1; };
+
+
 assignment:
- "id" "=" exp                { $$ = new AssignmentExprAST($1, $3); };
+ "id" "=" exp                 { $$ = new AssignmentExprAST($1, $3); }
+| "+" "+" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('+', new VariableExprAST($3), new NumberExprAST(1.0))); }
+| "-" "-" "id"                { $$ = new AssignmentExprAST($3, new BinaryExprAST('-', new VariableExprAST($3), new NumberExprAST(1.0))); };
 
 block:
   "{" stmts "}"               { std::vector<VarBindingAST*> definitions;
@@ -149,9 +164,19 @@ exp:
 | idexp                 { $$ = $1; }
 | "(" exp ")"           { $$ = $2; }
 | "number"              { $$ = new NumberExprAST($1); }
-| expif                 { $$ = $1; }
-| block                 { $$ = $1; };
-  
+| expif                 { $$ = $1; };
+
+ifstmt :
+  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5); }
+| "if" "(" condexp ")" stmt "else" stmt      { $$ = new IfExprAST($3,$5,$7); };
+
+forstmt :
+  "for" "(" init ";" condexp ";" assignment ")" stmt   {$$ = new ForExprAST($3,$5,$7,$9); };
+
+init :
+  binding             { $$ = $1; }
+| assignment          { $$ = $1; }; 
+
 vardefs:
   binding                 { std::vector<VarBindingAST*> definitions;
                             definitions.push_back($1);
@@ -175,7 +200,8 @@ condexp:
 
 idexp:
   "id"                  { $$ = new VariableExprAST($1); }
-| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); };
+| "id" "(" optexp ")"   { $$ = new CallExprAST($1,$3); }
+| "-" "id"              { $$ = new BinaryExprAST('-', new NumberExprAST(0.0), new VariableExprAST($2)); };
 
 optexp:
   %empty                { std::vector<ExprAST*> args;
