@@ -25,6 +25,7 @@
   class AssignmentExprAST;
   class GlobalValueAST;
   class ForExprAST;
+  class LogicalExprAST;
 }
 
 // The parsing context.
@@ -64,6 +65,9 @@
   FOR        "for"
   IF         "if"
   ELSE       "else"
+  AND        "and"
+  OR         "or"
+  NOT        "not"
 ;
 
 %token <std::string> IDENTIFIER "id"
@@ -91,6 +95,7 @@
 %type <ExprAST*> ifstmt
 %type <ForExprAST*> forstmt
 %type <RootAST*> init
+%type <ExprAST*> relexp
 
 %%
 %start startsymb;
@@ -126,10 +131,12 @@ idseq:
 | "id" idseq            { $2.insert($2.begin(),$1); $$ = $2; };
 
 %left ":";
+%left "and" "or";
+%left "not";
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
-%right "else" ")";
+
 
 stmts:
   stmt                  { std::vector<ExprAST*> args;
@@ -191,10 +198,22 @@ initexp:
   %empty                  { $$ = nullptr; }
 | "=" exp                 { $$ = $2; };
 
+%right "?";
+
 expif:
   condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); };
 
 condexp:
+  relexp                  { $$ = $1; }
+| relexp "and" condexp    { $$ = new LogicalExprAST('&',$1,$3); }
+| relexp "or" condexp     { $$ = new LogicalExprAST('|',$1,$3); }
+| "not" condexp           { $$ = new LogicalExprAST('!',$2); }
+| "(" condexp ")"         { $$ = $2; };
+
+
+%right "else" ")";
+
+relexp:
   exp "<" exp           { $$ = new BinaryExprAST('<',$1,$3); }
 | exp "==" exp          { $$ = new BinaryExprAST('=',$1,$3); };
 

@@ -218,5 +218,15 @@ public:
   Value *codegen(driver& drv) override;
 };
 
+class LogicalExprAST : public ExprAST {
+private:
+  char Op;
+  ExprAST* LLExp;
+  ExprAST* RLExp;
+public:
+  LogicalExprAST(char Op, ExprAST* LLExp, ExprAST* RLExp);
+  LogicalExprAST(char Op, ExprAST* LLExp);
+  Value *codegen(driver& drv) override;
+};
 
 #endif // ! DRIVER_HH

@@ -126,6 +126,7 @@ Value *BinaryExprAST::codegen(driver& drv) {
   
   Value *L = LHS->codegen(drv);
   Value *R = RHS->codegen(drv);
+
   if (!L || !R) 
      return nullptr;
   switch (Op) {
@@ -141,6 +142,7 @@ Value *BinaryExprAST::codegen(driver& drv) {
     return builder->CreateFCmpULT(L,R,"lttest");
   case '=':
     return builder->CreateFCmpUEQ(L,R,"eqtest");
+
   default:  
     std::cout << Op << std::endl;
     return LogErrorV("Operatore binario non supportato");
@@ -638,3 +640,35 @@ Value* ForExprAST::codegen(driver& drv) {
 
     return Constant::getNullValue(Type::getDoubleTy(*context));
 };
+
+LogicalExprAST::LogicalExprAST(char Op, ExprAST* LLExp, ExprAST* RLExp):
+            Op(Op), LLExp(LLExp), RLExp(RLExp) {};
+
+LogicalExprAST::LogicalExprAST(char Op, ExprAST* LLExp):
+            Op(Op), LLExp(LLExp) {};
+
+Value* LogicalExprAST::codegen(driver& drv) {
+  
+  Value *L = LLExp->codegen(drv);
+  Value *R;
+
+  if (!L) 
+     return nullptr;
+
+  if (RLExp)
+    R = RLExp->codegen(drv);
+
+  switch(Op){
+    case '&':
+      return builder->CreateLogicalAnd(L,R,"andtest");
+    case '|':
+      return builder->CreateLogicalOr(L,R,"ortest");
+    case '!':
+      return builder->CreateNot(L,"nottest");
+
+    default:  
+      std::cout << Op << std::endl;
+      return LogErrorV("Operatore binario non supportato");
+    }
+};
+
