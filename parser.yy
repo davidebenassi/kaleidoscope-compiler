@@ -129,6 +129,7 @@ idseq:
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
+%right "else" ")";
 
 stmts:
   stmt                  { std::vector<ExprAST*> args;
@@ -166,7 +167,7 @@ exp:
 | expif                 { $$ = $1; };
 
 ifstmt :
-  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5,nullptr); }
+  "if" "(" condexp ")" stmt                  { $$ = new IfExprAST($3,$5); }
 | "if" "(" condexp ")" stmt "else" stmt      { $$ = new IfExprAST($3,$5,$7); };
 
 forstmt :

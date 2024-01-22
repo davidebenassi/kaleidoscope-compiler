@@ -191,6 +191,8 @@ IfExprAST::IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp):
    Cond(Cond), TrueExp(TrueExp), FalseExp(FalseExp) {};
    
 Value* IfExprAST::codegen(driver& drv) {
+
+    BasicBlock *CondBB = builder->GetInsertBlock();
     // Viene dapprima generato il codice per valutare la condizione, che
     // memorizza il risultato (di tipo i1, dunque booleano) nel registro SSA 
     // che viene "memorizzato" in CondV. 
@@ -201,6 +203,7 @@ Value* IfExprAST::codegen(driver& drv) {
     // Ora bisogna generare l'istruzione di salto condizionato, ma prima
     // vanno creati i corrispondenti basic block nella funzione attuale
     // (ovvero la funzione di cui fa parte il corrente blocco di inserimento)
+    
     Function *function = builder->GetInsertBlock()->getParent();
     BasicBlock *TrueBB =  BasicBlock::Create(*context, "trueexp", function);
     // Il blocco TrueBB viene inserito nella funzione dopo il blocco corrente
@@ -261,10 +264,7 @@ Value* IfExprAST::codegen(driver& drv) {
     }
     else
       function->insert(function->end(), MergeBB);
-    
-    
-
-    
+        
     // Andiamo dunque a generare il codice per la parte dove i due "flussi"
     // di esecuzione si riuniscono. Impostiamo correttamente il builder
     builder->SetInsertPoint(MergeBB);
@@ -278,6 +278,7 @@ Value* IfExprAST::codegen(driver& drv) {
     // 1) Dapprima si crea il nodo PHI specificando quanti sono i possibili nodi sorgente
     // 2) Per ogni possibile nodo sorgente, viene poi inserita l'etichetta e il registro
     //    SSA da cui prelevare il valore 
+    /*
     if(FalseExp) {
       PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
       PN->addIncoming(TrueV, TrueBB);
@@ -286,6 +287,18 @@ Value* IfExprAST::codegen(driver& drv) {
     }
     else
       return Constant::getNullValue(Type::getDoubleTy(*context));
+      */
+    
+    PHINode *PN = builder->CreatePHI(Type::getDoubleTy(*context), 2, "condval");
+    PN->addIncoming(TrueV, TrueBB);
+
+    if(FalseExp)
+      PN->addIncoming(FalseV, FalseBB);
+    else
+      PN->addIncoming(Constant::getNullValue(Type::getDoubleTy(*context)), CondBB);
+
+    return PN;
+    
 };
 
 /********************** Block Expression Tree *********************/

@@ -130,7 +130,7 @@ private:
   ExprAST* TrueExp;
   ExprAST* FalseExp;
 public:
-  IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp);
+  IfExprAST(ExprAST* Cond, ExprAST* TrueExp, ExprAST* FalseExp=nullptr);
   Value *codegen(driver& drv) override;
 };
 
