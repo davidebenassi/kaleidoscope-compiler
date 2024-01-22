@@ -211,22 +211,12 @@ class ForExprAST : public ExprAST {
 private:
   RootAST* Init;
   ExprAST* CondExp;
-  ExprAST* Assignment;
+  AssignmentExprAST* Assignment;
   ExprAST* Stmt;
 public:
-  ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt);
+  ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt);
   Value *codegen(driver& drv) override;
 };
-
-/* class UnaryExprAST : public ExprAST {
-private:
-  char Op;
-  std::string Name;
-
-public:
-  UnaryExprAST(char Op, std::string Name);
-  Value *codegen(driver& drv) override;
-}; */
 
 
 #endif // ! DRIVER_HH

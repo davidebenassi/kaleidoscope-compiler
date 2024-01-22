@@ -85,7 +85,7 @@
 %type <VarBindingAST*> binding
 %type <std::vector<ExprAST*>> stmts
 %type <ExprAST*> stmt
-%type <ExprAST*> assignment
+%type <AssignmentExprAST*> assignment
 %type <ExprAST*>initexp
 %type <GlobalValueAST*> globalvar
 %type <ExprAST*> ifstmt

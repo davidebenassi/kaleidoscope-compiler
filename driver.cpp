@@ -346,7 +346,15 @@ AllocaInst* VarBindingAST::codegen(driver& drv) {
 
    Function *fun = builder->GetInsertBlock()->getParent();
    // Ora viene generato il codice che definisce il valore della variabile
-   Value *BoundVal = Val->codegen(drv);
+
+  Value *BoundVal;
+   if(Val){
+    BoundVal = Val->codegen(drv);
+   }
+   else{
+    BoundVal = (new NumberExprAST(0.0))->codegen(drv);
+   }
+   
    if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
       return nullptr;
    // Se tutto ok, si genera l'struzione che alloca memoria per la variabile ...
@@ -529,55 +537,13 @@ Value* GlobalValueAST::codegen(driver& drv) {
   return var;
 }
 
-/******************** Unary Expression Tree **********************/
-/*UnaryExprAST::UnaryExprAST(char Op, std::string Name):
-  Op(Op), Name(Name) {};
-
-// La generazione del codice in questo caso è di facile comprensione.
-// Vengono ricorsivamente generati il codice per il primo e quello per il secondo
-// operando. Con i valori memorizzati in altrettanti registri SSA si
-// costruisce l'istruzione utilizzando l'opportuno operatore
-Value UnaryExprAST::codegen(driver& drv) {
-
-  AllocaInst Alloca = drv.NamedValues[Name];
-
-  Value* oldVal;
-
-  if(!Alloca){
-    GlobalVariable* Alloca = module->getNamedGlobal(Name);
-    if (!Alloca)
-      return LogErrorV("Variabile "+Name+" non definita");
-    oldVal = builder->CreateLoad(Alloca->getValueType(), Alloca, Name.c_str());
-  }
-  else
-    oldVal = builder->CreateLoad(Alloca->getAllocatedType(), Alloca, Name.c_str());
-
-  if (!oldVal) 
-    return nullptr;
-
-  Value* newVal;
-
-  switch (Op) {
-  case '+':
-    newVal = builder->CreateFAdd(oldVal,ConstantFP::get(context, APFloat(1.0)),"addres");
-  case '-':
-    newVal = builder->CreateFSub(oldVal,ConstantFP::get(context, APFloat(1.0)),"subres");
-  default:
-    std::cout << Op << std::endl;
-    return LogErrorV("Operatore binario non supportato");
-  }
-
-  builder->CreateStore(newVal, Alloca);
-  return Alloca;
-}; */
 
 /********************** For Expression Tree *********************/
-ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, ExprAST* Assignment, ExprAST* Stmt):
+ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
 
 Value* ForExprAST::codegen(driver& drv) {
-    
-    AllocaInst* AllocaTmp;
+    AllocaInst* AllocaTmp = nullptr;
 
     // Prova di casting a VarBinding -- se fallisce ritorna nullptr -> entra nel ramo else
     VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
@@ -594,9 +560,8 @@ Value* ForExprAST::codegen(driver& drv) {
       Value* InitV = InitCasted->codegen(drv);
       if (!InitV)
         return nullptr;
-      //COMPLETA
     }
-    
+
     Function *function = builder->GetInsertBlock()->getParent();
     
     BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
