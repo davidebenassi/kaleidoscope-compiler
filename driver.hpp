@@ -224,8 +224,7 @@ private:
   ExprAST* LLExp;
   ExprAST* RLExp;
 public:
-  LogicalExprAST(char Op, ExprAST* LLExp, ExprAST* RLExp);
-  LogicalExprAST(char Op, ExprAST* LLExp);
+  LogicalExprAST(char Op, ExprAST* LLExp, ExprAST* RLExp = nullptr);
   Value *codegen(driver& drv) override;
 };
 

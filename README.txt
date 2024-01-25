@@ -35,7 +35,7 @@ Nella grammatica di primo livello sono state sviluppate le seguenti implementazi
     + aggiunta la classe **`AssignmentExprAST`**
 
 * **Variabili Globali**
-    + aggiunta la classe **`GlobalValueAST`**
+    + aggiunta la classe **`GlobalVariableAST`**
 
 ####Modifiche aggiuntive
 * modificata la classe **`VarBindingAST`** → permessa la definizione di una variabile senza inizializzarne il valore.
@@ -46,7 +46,7 @@ Nella grammatica di primo livello sono state sviluppate le seguenti implementazi
 
 Nella grammatica di secondo livello sono state sviluppate le seguenti implementazioni:
 * **IF**
-    * modificata la classe **`IfExprAST`** → implementata la possibilità di utilizzare costrutti if/else, non più solo *inline IF*
+    * modificata la classe **`IfExprAST`** → implementata la possibilità di utilizzare costrutti if/else, non più solo *inline IF*, tramite parametro di default
 
 * **FOR**
     * aggiunta la classe **`ForExprAST`**
@@ -61,5 +61,5 @@ Nella grammatica di secondo livello sono state sviluppate le seguenti implementa
 
 >## Terzo Livello
 Nella grammatica di terzo livello sono state sviluppate le seguenti implementazioni:
-* **Operatori logici AND OR NOT**
+* **Operatori logici AND OR NOT -- ('&', '|', '!')**
     * aggiunta la classe **`LogicalExprAST`**

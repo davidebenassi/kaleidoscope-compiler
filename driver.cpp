@@ -528,13 +528,14 @@ Function *FunctionAST::codegen(driver& drv) {
 // -------------------------------------------------- FUNZIONI IMPLEMENTATE -------------------------------------------------- //
 
 /********************** Assignment Expression Tree *********************/
-AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  Name(Name), Val(Val) {};
+AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  
+            Name(Name), Val(Val) {};
 
 Value* AssignmentExprAST::codegen(driver& drv) {
   
   Value *BoundVal = Val->codegen(drv);
 
-  if (!BoundVal)  // Qualcosa è andato storto nella generazione del codice?
+  if (!BoundVal)  
     return nullptr;
   
   AllocaInst* Alloca = drv.NamedValues[Name];
@@ -542,7 +543,7 @@ Value* AssignmentExprAST::codegen(driver& drv) {
     GlobalVariable* A = module->getNamedGlobal(Name);
     
     if (!A)
-      return LogErrorV("Variabile "+Name+" non definita");
+      return LogErrorV("Variabile " + Name + " non definita");
 
     builder->CreateStore(BoundVal, A);
     return A;
@@ -553,7 +554,8 @@ Value* AssignmentExprAST::codegen(driver& drv) {
 }
 
 /********************** Global Value Tree *********************/
-GlobalVariableAST::GlobalVariableAST(std::string Name):  Name(Name){};
+GlobalVariableAST::GlobalVariableAST(std::string Name):  
+            Name(Name){};
 
 Value* GlobalVariableAST::codegen(driver& drv) {
 
@@ -571,7 +573,6 @@ Value* GlobalVariableAST::codegen(driver& drv) {
   return var;
 }
 
-
 /********************** For Expression Tree *********************/
 ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assignment, ExprAST* Stmt):
             Init(Init), CondExp(CondExp), Assignment(Assignment), Stmt(Stmt){};
@@ -579,7 +580,7 @@ ForExprAST::ForExprAST(RootAST* Init, ExprAST* CondExp, AssignmentExprAST* Assig
 Value* ForExprAST::codegen(driver& drv) {
     AllocaInst* AllocaTmp = nullptr;
 
-    // Prova di casting a VarBinding -- se fallisce ritorna nullptr -> entra nel ramo else
+    // Try to cast -- fail : return nullptr
     VarBindingAST* InitCasted = dynamic_cast<VarBindingAST*>(Init);
     if (InitCasted){
       AllocaInst* InitV = InitCasted->codegen(drv);
@@ -590,7 +591,11 @@ Value* ForExprAST::codegen(driver& drv) {
       drv.NamedValues[InitCasted->getName()] = InitV;
     }
     else{
+      // Second cast try
       AssignmentExprAST* InitCasted = dynamic_cast<AssignmentExprAST*>(Init);
+      if (!InitCasted)
+        return nullptr;
+
       Value* InitV = InitCasted->codegen(drv);
       if (!InitV)
         return nullptr;
@@ -599,42 +604,41 @@ Value* ForExprAST::codegen(driver& drv) {
     Function *function = builder->GetInsertBlock()->getParent();
     
     BasicBlock *CondBB = BasicBlock::Create(*context, "cond", function); 
-    BasicBlock *LoopBB = BasicBlock::Create(*context, "loop");
+    BasicBlock *StmtsBB = BasicBlock::Create(*context, "statements");
     BasicBlock *EndBB = BasicBlock::Create(*context, "end");
 
     builder->CreateBr(CondBB);
 
-    //BLOCCO CONDIZIONE
+    //Cond Block
     builder->SetInsertPoint(CondBB);
     Value* CondV = CondExp->codegen(drv);
     if (!CondV)
        return nullptr;
-    builder->CreateCondBr(CondV, LoopBB, EndBB);
+    builder->CreateCondBr(CondV, StmtsBB, EndBB);
 
     CondBB = builder->GetInsertBlock();
-    function->insert(function->end(), LoopBB);
+    function->insert(function->end(), StmtsBB);
 
-    //BLOCCO LOOP
-    builder->SetInsertPoint(LoopBB);
+    //Loop Block -- statements 
+    builder->SetInsertPoint(StmtsBB);
     Value *StmtV = Stmt->codegen(drv);
     if (!StmtV)
        return nullptr;
 
-    //Esecuzione assegnamento (incremento)
     Value *AssignedV = Assignment->codegen(drv);
     if (!AssignedV)
         return nullptr;
 
     builder->CreateBr(CondBB);
 
-    LoopBB = builder->GetInsertBlock();
+    StmtsBB = builder->GetInsertBlock();
     function->insert(function->end(), EndBB);
 
 
-    //BLOCCO END
+    //Loop Exit
     builder->SetInsertPoint(EndBB);
     
-    // Verifico se devo fare il restore di AllocaTmp
+    // AllocaTmp restore
     if(AllocaTmp)
       drv.NamedValues[InitCasted->getName()] = AllocaTmp;
 
@@ -644,9 +648,6 @@ Value* ForExprAST::codegen(driver& drv) {
 
 LogicalExprAST::LogicalExprAST(char Op, ExprAST* LLExp, ExprAST* RLExp):
             Op(Op), LLExp(LLExp), RLExp(RLExp) {};
-
-LogicalExprAST::LogicalExprAST(char Op, ExprAST* LLExp):
-            Op(Op), LLExp(LLExp) {};
 
 Value* LogicalExprAST::codegen(driver& drv) {
   
@@ -661,11 +662,11 @@ Value* LogicalExprAST::codegen(driver& drv) {
 
   switch(Op){
     case '&':
-      return builder->CreateLogicalAnd(L,R,"andtest");
+      return builder->CreateLogicalAnd(L,R,"and");
     case '|':
-      return builder->CreateLogicalOr(L,R,"ortest");
+      return builder->CreateLogicalOr(L,R,"or");
     case '!':
-      return builder->CreateNot(L,"nottest");
+      return builder->CreateNot(L,"not");
 
     default:  
       std::cout << Op << std::endl;
