@@ -57,8 +57,6 @@ Nella grammatica di secondo livello sono state sviluppate le seguenti implementa
 * Gestione di identificatori *negativi* (es: -2)
 
 
-
-
 >## Terzo Livello
 Nella grammatica di terzo livello sono state sviluppate le seguenti implementazioni:
 * **Operatori logici AND OR NOT -- ('&', '|', '!')**
