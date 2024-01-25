@@ -23,7 +23,7 @@
   class BlockExprAST;
   class VarBindingAST;
   class AssignmentExprAST;
-  class GlobalValueAST;
+  class GlobalVariableAST;
   class ForExprAST;
   class LogicalExprAST;
 }
@@ -91,7 +91,7 @@
 %type <ExprAST*> stmt
 %type <AssignmentExprAST*> assignment
 %type <ExprAST*>initexp
-%type <GlobalValueAST*> globalvar
+%type <GlobalVariableAST*> globalvar
 %type <ExprAST*> ifstmt
 %type <ForExprAST*> forstmt
 %type <RootAST*> init
@@ -105,7 +105,7 @@ program                 { drv.root = $1; };
 
 program:
   %empty                { $$ = new SeqAST(nullptr,nullptr); }
-|  top ";" program      { $$ = new SeqAST($1,$3); };               //! le altre dasmkmdk: non dovrebbero finire in program
+|  top ";" program      { $$ = new SeqAST($1,$3); };               
 
 top:
 %empty                  { $$ = nullptr; }
@@ -114,7 +114,7 @@ top:
 | globalvar             { $$ = $1; };
 
 definition:
-  "def" proto block       { $$ = new FunctionAST($2,$3); $2->noemit(); };
+  "def" proto block     { $$ = new FunctionAST($2,$3); $2->noemit(); };
 
 external:
   "extern" proto        { $$ = $2; };
@@ -123,7 +123,7 @@ proto:
   "id" "(" idseq ")"    { $$ = new PrototypeAST($1,$3);  };
   
 globalvar:
- "global" "id"         { $$ = new GlobalValueAST($2); };
+ "global" "id"          { $$ = new GlobalVariableAST($2); };
 
 idseq:
   %empty                { std::vector<std::string> args;
@@ -136,6 +136,8 @@ idseq:
 %left "<" "==";
 %left "+" "-";
 %left "*" "/";
+%right "?";
+%right "else" ")";
 
 
 stmts:
@@ -198,8 +200,6 @@ initexp:
   %empty                  { $$ = nullptr; }
 | "=" exp                 { $$ = $2; };
 
-%right "?";
-
 expif:
   condexp "?" exp ":" exp { $$ = new IfExprAST($1,$3,$5); };
 
@@ -210,8 +210,6 @@ condexp:
 | "not" condexp           { $$ = new LogicalExprAST('!',$2); }
 | "(" condexp ")"         { $$ = $2; };
 
-
-%right "else" ")";
 
 relexp:
   exp "<" exp           { $$ = new BinaryExprAST('<',$1,$3); }

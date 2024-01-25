@@ -184,7 +184,7 @@ public:
   Function *codegen(driver& drv) override;
 };
 
-// LE NOSTRE!
+// -------------------------------------------------- FUNZIONI IMPLEMENTATE -------------------------------------------------- //
 /// AssignmentExprAST - Classe per l'assegnamento
 class AssignmentExprAST : public ExprAST {
 private:
@@ -196,13 +196,13 @@ public:
   Value *codegen(driver& drv) override;
 };
 
-/// GlobalValueAST - Classe per le variabili globali
-class GlobalValueAST: public RootAST {
+/// GlobalVariableAST - Classe per le variabili globali
+class GlobalVariableAST: public RootAST {
 private:
   const std::string Name;
   
 public:
-  GlobalValueAST(const std::string Name);
+  GlobalVariableAST(const std::string Name);
   Value *codegen(driver& drv) override;
 };
 

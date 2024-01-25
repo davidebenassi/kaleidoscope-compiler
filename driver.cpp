@@ -525,6 +525,7 @@ Function *FunctionAST::codegen(driver& drv) {
   return nullptr;
 };
 
+// -------------------------------------------------- FUNZIONI IMPLEMENTATE -------------------------------------------------- //
 
 /********************** Assignment Expression Tree *********************/
 AssignmentExprAST::AssignmentExprAST(std::string Name, ExprAST* Val):  Name(Name), Val(Val) {};
@@ -552,9 +553,9 @@ Value* AssignmentExprAST::codegen(driver& drv) {
 }
 
 /********************** Global Value Tree *********************/
-GlobalValueAST::GlobalValueAST(std::string Name):  Name(Name){};
+GlobalVariableAST::GlobalVariableAST(std::string Name):  Name(Name){};
 
-Value* GlobalValueAST::codegen(driver& drv) {
+Value* GlobalVariableAST::codegen(driver& drv) {
 
 
   GlobalVariable *var = new GlobalVariable(
