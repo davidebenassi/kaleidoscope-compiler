@@ -1,7 +1,5 @@
-# Progetto di Linguaggi e Compilatori - Benassi Davide
+# LLVM Compiler for Kaleidoscope Language
 
-
-***
 ## Installazione
 
 Scarica *llvm-17*
@@ -15,7 +13,7 @@ Scarica *bison* e *flex*
  sudo apt install bison
  sudo apt install flex
 ```
-***
+
 ## Utilizzo
 
 Nel progetto sono presenti due **MakeFile**;
@@ -26,7 +24,7 @@ Nel progetto sono presenti due **MakeFile**;
 
 Infine esegui l'eseguibile generato `./script`
 
-***
+
 >## Primo Livello
 
 Nella grammatica di primo livello sono state sviluppate le seguenti implementazioni:
@@ -36,7 +34,7 @@ Nella grammatica di primo livello sono state sviluppate le seguenti implementazi
 * **Variabili Globali**
     + aggiunta la classe **`GlobalVariableAST`**
 
-####Modifiche aggiuntive
+### Modifiche aggiuntive
 * modificata la classe **`VarBindingAST`** → permessa la definizione di una variabile senza inizializzarne il valore.
 * modificata la classe **`VariableExprAST`** → permessa la rappresentazione delle variabili globali, controllando prima lo scope locale, e in caso di assenza della variabile, controlla lo scope globale.
 * modificata la classe **`BlockExprAST`** → permesso l'inserimento di un numero indefinito di istruzioni per blocco.
@@ -50,7 +48,7 @@ Nella grammatica di secondo livello sono state sviluppate le seguenti implementa
 * **FOR**
     * aggiunta la classe **`ForExprAST`**
 
-####Modifiche aggiuntive
+### Modifiche aggiuntive
 
 * Operatori di incremento (++i) e decremento (--i) nel *parser.yy*
 * Gestione di identificatori *negativi* (es: -2)
