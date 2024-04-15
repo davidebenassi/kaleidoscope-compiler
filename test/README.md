@@ -10,6 +10,11 @@ Dopo aver eventualmente operato tale modifica, per compilare i
 programmi in linguaggio "kaleidoscope imperativo" (suffisso .k)
 e i file .cpp ausiliari è sufficiente digitare
 
+* Per la creazione degli eseguibili, per il testing
+    + genera l'eseguibile utilizzando nuovamente il comando `make <script.k>` nella cartella contenente i *file.k*
+
+Infine esegui l'eseguibile generato `./script`
+
 > make <nome programma>
 
 dove <nome programma> è uno fra:

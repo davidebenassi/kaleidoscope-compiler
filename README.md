@@ -1,14 +1,14 @@
 # LLVM Compiler for Kaleidoscope Language
 
-## Installation & Dependencies
+## Dependencies
 
-Scarica *llvm-17*
+For this project you need to have **llvm-17**, **bison** and **flex** installed in your machine.
 ```bash
  wget https://apt.llvm.org/llvm.sh
  chmod +x llvm.sh
  sudo ./llvm.sh 17
 ```
-Download **bison** and **flex**
+
 ```bash
  sudo apt install bison
  sudo apt install flex
@@ -16,9 +16,16 @@ Download **bison** and **flex**
 
 ## Usage
 
-1. Create the compiler binary ```kcomp```
-	+ ```bash make``` 
-* Per la creazione degli eseguibili, per il testing
-    + genera l'eseguibile utilizzando nuovamente il comando `make <script.k>` nella cartella contenente i *file.k*
+1. Clone the repository
+```
+git clone ---- add link ----
+```
 
-Infine esegui l'eseguibile generato `./script`
+2. Create the compiler binary ```kcomp```
+```
+cd kaleidoscope-llvm-compiler
+make
+``` 
+This will create the compile inside **test** folder
+
+3. Compile your ```.k``` files using ```kcomp``` 
