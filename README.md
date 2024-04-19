@@ -2,17 +2,21 @@
 
 ## Dependencies
 
-For this project you need to have **llvm-17**, **bison** and **flex** installed in your machine.
+For this project you need to install **llvm-17**, **bison** and **flex** on your machine.
+
+Install **llvm-17** using the [automatic script](https://apt.llvm.org/).
 ```bash
  wget https://apt.llvm.org/llvm.sh
  chmod +x llvm.sh
  sudo ./llvm.sh 17
 ```
+_You can delete the file llvm.sh after running it_
 
 ```bash
  sudo apt install bison
  sudo apt install flex
 ```
+**NOTE**: check to have **make** installed, otherwise install it with ```sudo apt install make``` 
 
 ## Usage
 
