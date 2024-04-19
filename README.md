@@ -13,8 +13,7 @@ Install **llvm-17** using the [automatic script](https://apt.llvm.org/).
 _You can delete the file llvm.sh after running it_
 
 ```bash
- sudo apt install bison
- sudo apt install flex
+ sudo apt install bison flex
 ```
 **NOTE**: check to have **make** installed, otherwise install it with ```sudo apt install make``` 
 
@@ -30,6 +29,6 @@ git clone ---- add link ----
 cd kaleidoscope-llvm-compiler
 make
 ``` 
-This will create the compile inside **test** folder
+This will create the **kcomp** compiler 
 
-3. Compile your ```.k``` files using ```kcomp``` 
+3. Compile your ```.k``` files using ```kcomp```. You can find some examples in **test** folder.
