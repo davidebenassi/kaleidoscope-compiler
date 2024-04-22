@@ -1,30 +1,37 @@
-La presente cartella contiene i file test su cui
-verrà provato il software prodotto come elaborato d'esame.
-Per compilare i programmi (oltre ad avere llvm installato) è necessario 
-che l'eseguibile del front-end (qui chiamato kcomp) sia presente nella directory
-che include la presente cartella. L'eseguibile viene infatti
-richiamato usando il comando ../kcomp
-Si modifichi opportunamente tale chiamata in caso l'eseguibile si trovasse
-in altra directory del file system.
-Dopo aver eventualmente operato tale modifica, per compilare i 
-programmi in linguaggio "kaleidoscope imperativo" (suffisso .k)
-e i file .cpp ausiliari è sufficiente digitare
+This folder is a collection of some kaleidoscope scripts.\
+All scripts have an auxiliary "**call cpp program**" that allows the created kaleidoscope functions
+to be called. \
+Kaleidoscope does not support **print** and **input** functions, so auxiliary C++ code is used.
 
-* Per la creazione degli eseguibili, per il testing
-    + genera l'eseguibile utilizzando nuovamente il comando `make <script.k>` nella cartella contenente i *file.k*
+## Compile the examples
 
-Infine esegui l'eseguibile generato `./script`
+### Compile all examples
+```bash
+make all
+make clean
+```
 
-> make <nome programma>
+### Compile a specific example
+```bash
+make <name>
+make clean
+```
+Where _name_ can be:
 
-dove <nome programma> è uno fra:
-
-1) floor  -> calcola la parte intera di un numero (intero o frazionario)
-2) rand   -> genera e stampa 10 numeri pseudocasuali
-3) fibonacci -> calcola l'ennesimo numero di Fibonacci
-4) sqrt -> Calcola la radice quadrata (approssimata) di un numero arbitrario
-5) eqn2 -> Calcola le soluzioni di un'equazione di secondo grado ax**2+bx+c=0, dati i coefficienti a,b e c
-6) sqrt2 -> come sqrt ma fa uso dell'operatore logico or
-7) sqrt3 -> come sqrt ma fa uso degli operatori logici and e not
+1. **floor**  -> Exctracts the integer part of a number
+2. **rand**   -> Generates pseudo-rando numbers between 0 and 1
+3. **fibonacci** -> Computes yet another Fibonacci's number
+4. **sqrt** -> Computes the square root of a number
+5. **eqn2** -> Calculates the solutions of a second-degree equation ax**2+bx+c=0, given the coefficients a,b and c
+6. **sqrt2** -> Equal to sqrt but it uses the logic OR operatori
+7. **sqrt3** -> Equal to sqrt but it uses the logic AND and NOT operators
 
 
+**NOTE**: clean will remove auxiliary files used to compile. If you want to remove also the binary run ```make cleanall```
+
+## Run an example
+
+Once you have generated the binary file you can run it with
+```bash
+./<name>
+```
