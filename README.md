@@ -31,8 +31,14 @@ make
 ``` 
 This will create the **kcomp** compiler 
 
-3. Compile your ```.k``` files using ```kcomp```. You can find some examples in **test** folder.
+3. Compile your ```.k``` files using ```kcomp```
+```bash
+./kcomp <file.k> 2> <file.ll>
+./tobinary <file.ll>
+```
 
+## Test yout own Kaleidoscope Scripts
+Use the **test** folder as a "_workspace_" to create your own ```.k``` file and follow thhe instructions in the README.md file to compile it.
 
-kcomp <file.k> 2> <file.ll>
-tobinary <file.ll>
+### Examples
+You can find some examples in **example-tests** folder.

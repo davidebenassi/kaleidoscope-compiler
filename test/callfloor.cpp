@@ -6,10 +6,9 @@ extern "C" {
 
 int main() {
     double x;
-    std::cout << "Inserisci il valore di x: ";
+    std::cout << "x value : ";
     std::cin >> x;
-    for (int i=0; i<1; i++) {
-       std::cout << floor(x) << std::endl;
-    }; 
+    std::cout << floor(x) << std::endl;
+    
     return 0;
 }
