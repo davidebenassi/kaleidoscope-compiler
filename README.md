@@ -26,9 +26,13 @@ git clone ---- add link ----
 
 2. Create the compiler binary ```kcomp```
 ```
-cd kaleidoscope-llvm-compiler
+cd kaleidoscope-compiler
 make
 ``` 
 This will create the **kcomp** compiler 
 
 3. Compile your ```.k``` files using ```kcomp```. You can find some examples in **test** folder.
+
+
+kcomp <file.k> 2> <file.ll>
+tobinary <file.ll>

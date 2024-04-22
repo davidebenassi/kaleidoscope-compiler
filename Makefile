@@ -2,7 +2,7 @@
 
 all: kcomp
 
-kcomp:    driver.o parser.o scanner.o kcomp.o
+kcomp:  driver.o parser.o scanner.o kcomp.o
 	clang++-17 -o kcomp driver.o parser.o scanner.o kcomp.o `llvm-config-17 --cxxflags --ldflags --libs --libfiles --system-libs`
 
 kcomp.o:  kcomp.cpp driver.hpp
