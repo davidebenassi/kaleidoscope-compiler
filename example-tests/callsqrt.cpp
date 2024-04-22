@@ -6,7 +6,7 @@ extern "C" {
 
 int main() {
     double x;
-    std::cout << "Inserisci il valore di x: ";
+    std::cout << "Value of x : ";
     std::cin >> x;
     std::cout << "sqrt(" << x << ") = " << sqrt(x) << std::endl;
 }
