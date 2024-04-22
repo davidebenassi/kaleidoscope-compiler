@@ -21,7 +21,7 @@ _You can delete the file llvm.sh after running it_
 
 1. Clone the repository
 ```
-git clone ---- add link ----
+git clone https://github.com/davidebenassi/kaleidoscope-compiler
 ```
 
 2. Create the compiler binary ```kcomp```
