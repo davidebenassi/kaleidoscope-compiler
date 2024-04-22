@@ -37,7 +37,7 @@ This will create the **kcomp** compiler
 ./tobinary <file.ll>
 ```
 
-## Test yout own Kaleidoscope Scripts
+## Test your own Kaleidoscope Scripts
 Use the **test** folder as a "_workspace_" to create your own ```.k``` file and follow thhe instructions in the README.md file to compile it.
 
 ### Examples
