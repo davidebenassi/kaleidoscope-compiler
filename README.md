@@ -1,62 +1,44 @@
-# Progetto di Linguaggi e Compilatori - Benassi Davide
+# LLVM Compiler for Kaleidoscope Language
 
+## Dependencies
 
-***
-## Installazione
+For this project you need to install **llvm-17**, **bison** and **flex** on your machine.
 
-Scarica *llvm-17*
+Install **llvm-17** using the [automatic script](https://apt.llvm.org/).
 ```bash
  wget https://apt.llvm.org/llvm.sh
  chmod +x llvm.sh
  sudo ./llvm.sh 17
 ```
-Scarica *bison* e *flex*
+_You can delete the file llvm.sh after running it_
+
 ```bash
- sudo apt install bison
- sudo apt install flex
+ sudo apt install bison flex
 ```
-***
-## Utilizzo
+**NOTE**: check to have **make** and **wget** installed, otherwise install them with ```sudo apt install make wget``` 
 
-Nel progetto sono presenti due **MakeFile**;
-* Per la generazione del kcomp, ovvero del compilatore
-    + genera il *kcomp* digitando `make` 
-* Per la creazione degli eseguibili, per il testing
-    + genera l'eseguibile utilizzando nuovamente il comando `make <script.k>` nella cartella contenente i *file.k*
+## Usage
 
-Infine esegui l'eseguibile generato `./script`
+1. Clone the repository
+```
+git clone https://github.com/davidebenassi/kaleidoscope-compiler
+```
 
-***
->## Primo Livello
+2. Create the compiler binary ```kcomp```
+```
+cd kaleidoscope-compiler
+make
+``` 
+This will create the **kcomp** compiler 
 
-Nella grammatica di primo livello sono state sviluppate le seguenti implementazioni:
-* **Operazioni di assegnamento**
-    + aggiunta la classe **`AssignmentExprAST`**
+3. Compile your ```.k``` files using ```kcomp```
+```bash
+./kcomp <file.k> 2> <file.ll>
+./tobinary <file.ll>
+```
 
-* **Variabili Globali**
-    + aggiunta la classe **`GlobalVariableAST`**
+## Test your own Kaleidoscope Scripts
+Use the **test** folder as a "_workspace_" to create your own ```.k``` file and compile them adding proper instructions in the Makefile.
 
-####Modifiche aggiuntive
-* modificata la classe **`VarBindingAST`** → permessa la definizione di una variabile senza inizializzarne il valore.
-* modificata la classe **`VariableExprAST`** → permessa la rappresentazione delle variabili globali, controllando prima lo scope locale, e in caso di assenza della variabile, controlla lo scope globale.
-* modificata la classe **`BlockExprAST`** → permesso l'inserimento di un numero indefinito di istruzioni per blocco.
-
->## Secondo Livello
-
-Nella grammatica di secondo livello sono state sviluppate le seguenti implementazioni:
-* **IF**
-    * modificata la classe **`IfExprAST`** → implementata la possibilità di utilizzare costrutti if/else, non più solo *inline IF*, tramite parametro di default
-
-* **FOR**
-    * aggiunta la classe **`ForExprAST`**
-
-####Modifiche aggiuntive
-
-* Operatori di incremento (++i) e decremento (--i) nel *parser.yy*
-* Gestione di identificatori *negativi* (es: -2)
-
-
->## Terzo Livello
-Nella grammatica di terzo livello sono state sviluppate le seguenti implementazioni:
-* **Operatori logici AND OR NOT -- ('&', '|', '!')**
-    * aggiunta la classe **`LogicalExprAST`**
+### Examples
+You can find some examples in **example-tests** folder.

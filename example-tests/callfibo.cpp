@@ -6,7 +6,7 @@ extern "C" {
 
 int main() {
     double n;
-    std::cout << "Inserisci il valore di n: ";
+    std::cout << "Valore of n : ";
     std::cin >> n;
     std::cout << "fibonacci(" << n << ") = " << fibo(n) << std::endl;
 }
