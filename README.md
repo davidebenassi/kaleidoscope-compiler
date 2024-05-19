@@ -42,3 +42,8 @@ Use the **test** folder as a "_workspace_" to create your own ```.k``` file and 
 
 ### Examples
 You can find some examples in **example-tests** folder.
+
+## Contributors
+ - Davide Benassi [[@davidebenassi]](https://github.com/davidebenassi)
+ - Luca Lodesani [[@StayLode]](https://github.com/StayLode)
+ - Ivan Giove [[@giove29]](https://github.com/giove29)
