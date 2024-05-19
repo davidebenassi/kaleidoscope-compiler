@@ -15,7 +15,7 @@ _You can delete the file llvm.sh after running it_
 ```bash
  sudo apt install bison flex
 ```
-**NOTE**: check to have **make** installed, otherwise install it with ```sudo apt install make``` 
+**NOTE**: check to have **make** and **wget** installed, otherwise install it with ```sudo apt install make wget``` 
 
 ## Usage
 
