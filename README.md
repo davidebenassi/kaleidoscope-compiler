@@ -38,7 +38,7 @@ This will create the **kcomp** compiler
 ```
 
 ## Test your own Kaleidoscope Scripts
-Use the **test** folder as a "_workspace_" to create your own ```.k``` file and follow thhe instructions in the README.md file to compile it.
+Use the **test** folder as a "_workspace_" to create your own ```.k``` file and compile them adding proper instructions in the Makefile.
 
 ### Examples
 You can find some examples in **example-tests** folder.
